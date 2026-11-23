@@ -25,15 +25,10 @@ Une démo de mini CRM de suivi de leads froids (artisans du bâtiment), pilotée
 - Présentation : `src/app/` (pages) et `src/presentation/` (actions, composants, providers). Passe toujours par un service.
 - Service : `src/services/`. Règles métier et validation. Reçoit la couche données en paramètre.
 - Données : `src/data/`. Seule couche qui parle à la base.
-- Le webhook (`src/app/api/`) est une porte d'entrée comme l'écran : il passe par le service, qui vérifie la signature et valide l'événement.
-- L'envoi d'e-mails passe par un fournisseur derrière une interface, remplaçable sans toucher au reste.
 Chaque test est à côté du fichier testé (`*.test.ts`).
 
 ## Design system
-- Thème C · Outil, défini dans `src/app/globals.css` : `:root` pour le clair, `.dark` pour le sombre. Toute couleur est une variable du thème, jamais une valeur en dur.
-- Chaque écran fonctionne en clair ET en sombre.
-- Composants shadcn dans `src/presentation/components/ui/` (`pnpm dlx shadcn@latest add <composant>`).
-- Polices : IBM Plex Sans (texte), IBM Plex Mono (code, dates).
+À définir (étape design system).
 
 ## Git
 - On travaille sur dev. Jamais de commit direct sur main.
