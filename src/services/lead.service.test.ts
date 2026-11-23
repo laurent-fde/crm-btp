@@ -440,7 +440,7 @@ describe("service · lead.service · getBoard · statistiques", () => {
     expect(leads).toEqual({ "Karim Benali": 0, Léa: 2 });
     expect(board.sequenceLength).toBe(4);
     expect(board.stats.total).toBe(2);
-    expect(board.stats.sequence).toEqual([
+    expect(board.stats.sequence.map(({ step, count }) => ({ step, count }))).toEqual([
       { step: 1, count: 0 },
       { step: 2, count: 1 },
       { step: 3, count: 0 },

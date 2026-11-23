@@ -87,9 +87,9 @@ describe("présentation · KanbanBoard", () => {
       <KanbanBoard
         columns={groupByStage([lea, { ...karim, emailStep: 0 }])}
         sequence={[
-          { step: 1, count: 0 },
-          { step: 2, count: 1 },
-          { step: 3, count: 0 },
+          { step: 1, count: 0, percent: 0 },
+          { step: 2, count: 1, percent: 100 },
+          { step: 3, count: 0, percent: 0 },
         ]}
         sequenceLength={3}
       />,

@@ -41,7 +41,7 @@ describe("domaine · boardStats", () => {
       lead("e", "ouvert", 1), // a agi : n'est plus en attente dans la séquence
     ]);
 
-    expect(boardStats(columns, 3).sequence).toEqual([
+    expect(boardStats(columns, 3).sequence.map(({ step, count }) => ({ step, count }))).toEqual([
       { step: 1, count: 1 },
       { step: 2, count: 1 },
       { step: 3, count: 2 },
@@ -50,7 +50,7 @@ describe("domaine · boardStats", () => {
   });
 
   it("compte au dernier e-mail un lead dont l'étape dépasse la séquence actuelle (séquence raccourcie)", () => {
-    expect(boardStats(groupByStage([lead("a", "email_envoye", 5)]), 3).sequence.at(-1)).toEqual({ step: 3, count: 1 });
+    expect(boardStats(groupByStage([lead("a", "email_envoye", 5)]), 3).sequence.at(-1)).toMatchObject({ step: 3, count: 1 });
   });
 
   // Revue #21 : le taux de gain porte sur les leads terminés (gagnés + perdus), pas sur les leads en cours.
@@ -70,4 +70,22 @@ describe("domaine · boardStats", () => {
     expect(sequenceStep(2, 3)).toBe(2);
     expect(sequenceStep(5, 3)).toBe(3);
   });
+
+  // En-tête en pourcentages : chaque étape sur le total, chaque e-mail sur les leads en cours de séquence.
+  it("donne le pourcentage arrondi de chaque étape et de chaque e-mail, 0 sans lead", () => {
+    const columns = groupByStage([
+      lead("a", "nouveau"),
+      lead("b", "email_envoye", 1),
+      lead("c", "email_envoye", 3),
+      lead("d", "email_envoye", 3),
+    ]);
+    const stats = boardStats(columns, 3);
+
+    expect(stats.byStage.find((s) => s.stage === "email_envoye")?.percent).toBe(75);
+    expect(stats.byStage.find((s) => s.stage === "nouveau")?.percent).toBe(25);
+    expect(stats.sequence.map((s) => s.percent)).toEqual([33, 0, 67]);
+    expect(boardStats(groupByStage([]), 3).byStage.every((s) => s.percent === 0)).toBe(true);
+    expect(boardStats(groupByStage([]), 3).sequence.every((s) => s.percent === 0)).toBe(true);
+  });
 });
+
