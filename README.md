@@ -68,6 +68,7 @@ Pour la version en ligne, remplace l'adresse par `https://crm-btp-pi.vercel.app/
 | `200 {"ok":true,"duplicate":true}` | événement déjà reçu : rien ne change |
 | `401` | signature absente ou fausse |
 | `400` | événement mal formé, ou lead inconnu |
+| `413` | corps de plus de 64 Ko : refusé avant toute vérification |
 | `503` | base momentanément indisponible : renvoie plus tard |
 | `500` | configuration incomplète en ligne (`WEBHOOK_SECRET` ou `DATABASE_URL` manquant) : l'app refuse de tourner sans |
 
