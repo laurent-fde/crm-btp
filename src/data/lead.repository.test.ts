@@ -256,4 +256,52 @@ describe("données · lead.repository", () => {
       "lead-1": new Date("2026-11-26T09:00:00.000Z"),
     });
   });
+
+  // Lot 6 : passer dans « Perdu ». L'événement n'est écrit que si l'étape change vraiment.
+  describe("recordStageChange", () => {
+    const perdu: LeadEvent = { id: "perdu-1", leadId: "lead-1", type: "lead_perdu", occurredAt: new Date("2026-11-30T09:00:00.000Z") };
+
+    // Critère 4 : un lead « Perdu » le reste après redémarrage.
+    it("change l'étape et écrit l'événement ensemble, retrouvés après réouverture", async () => {
+      const url = tempUrl();
+      const avant = open(url);
+      const repository = createLeadRepository(avant);
+      await repository.insert({ ...karim, stage: "email_envoye" }, created(karim));
+
+      expect(await repository.recordStageChange(perdu, { from: "email_envoye", to: "perdu" })).toBe(true);
+      avant.client.close();
+
+      const apres = createLeadRepository(open(url));
+      expect((await apres.findById("lead-1"))?.stage).toBe("perdu");
+      expect((await apres.listEvents("lead-1")).at(-1)).toEqual(perdu);
+    });
+
+    it("n'écrit rien si le lead a changé d'étape entre-temps", async () => {
+      const repository = createLeadRepository(open(":memory:"));
+      await repository.insert({ ...karim, stage: "lien_clique" }, created(karim));
+
+      expect(await repository.recordStageChange(perdu, { from: "email_envoye", to: "perdu" })).toBe(false);
+
+      expect((await repository.findById("lead-1"))?.stage).toBe("lien_clique");
+      expect(await repository.listEvents("lead-1")).toHaveLength(1);
+    });
+  });
+
+  // Revue #14 : la date de réception d'une action (horloge de l'app) est gardée.
+  it("garde la date de réception d'une action", async () => {
+    const repository = createLeadRepository(open(":memory:"));
+    await repository.insert(karim, created(karim));
+    const action: LeadEvent = {
+      id: "action-1",
+      leadId: "lead-1",
+      type: "email_ouvert",
+      occurredAt: new Date("2026-11-23T09:00:00.000Z"),
+      receivedAt: new Date("2026-11-30T09:00:00.000Z"),
+      externalId: "evt-r",
+    };
+
+    await repository.recordEvent(action, null);
+
+    expect((await repository.listEvents("lead-1")).at(-1)).toEqual(action);
+  });
 });

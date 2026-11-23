@@ -17,7 +17,10 @@ export type SettingsState =
   | null;
 
 export async function updateSettingsAction(_previous: SettingsState, formData: FormData): Promise<SettingsState> {
-  const input = { sequenceLength: String(formData.get("sequenceLength") ?? "") };
+  const input = {
+    sequenceLength: String(formData.get("sequenceLength") ?? ""),
+    lostDelayDays: String(formData.get("lostDelayDays") ?? ""),
+  };
   const result = await getSettingsService().updateSettings(input);
   if (!result.ok) return { ok: false, errors: result.errors, ...(result.formError && { formError: result.formError }), values: input };
   refresh();

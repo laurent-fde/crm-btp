@@ -1,11 +1,13 @@
 // @vitest-environment node
 import { describe, expect, it } from "vitest";
 import type { Lead, LeadEvent, Stage } from "./ports";
-import { createFakeIds, createFakeLeadRepository } from "./testing/fakes";
+import { createFakeClock, createFakeIds, createFakeLeadRepository } from "./testing/fakes";
 import { signWebhook } from "./webhook-signature";
 import { createWebhookService } from "./webhook.service";
 
 const secret = "secret-de-test";
+// L'horloge de l'app (peut être avancée) : elle date la réception.
+const clock = createFakeClock("2026-11-30T09:00:00.000Z");
 const karim: Lead = {
   id: "lead-k",
   name: "Karim Benali",
@@ -21,7 +23,7 @@ const karim: Lead = {
 
 function setup(stage: Stage = "email_envoye", events: LeadEvent[] = [], id = karim.id) {
   const fake = createFakeLeadRepository([{ ...karim, id, stage }], events);
-  const service = createWebhookService({ repository: fake.repository, ids: createFakeIds("event"), secret });
+  const service = createWebhookService({ repository: fake.repository, ids: createFakeIds("event"), secret, clock });
   return { ...fake, service };
 }
 
@@ -44,6 +46,7 @@ describe("service · webhook.service · receive", () => {
         leadId: "lead-k",
         type: "email_ouvert",
         occurredAt: new Date("2026-11-23T09:00:00.000Z"),
+        receivedAt: new Date("2026-11-30T09:00:00.000Z"),
         externalId: "evt-1",
       },
     ]);
@@ -142,7 +145,7 @@ describe("service · webhook.service · receive", () => {
 describe("service · webhook.service · date de l'événement", () => {
   it("date l'événement avec l'heure fournie par l'expéditeur", async () => {
     const fake = createFakeLeadRepository([karim]);
-    const service = createWebhookService({ repository: fake.repository, ids: createFakeIds(), secret });
+    const service = createWebhookService({ repository: fake.repository, ids: createFakeIds(), secret, clock });
 
     await service.receive(...signed(payload({ occurredAt: "2026-11-22T07:30:00.000Z" })));
 
@@ -155,5 +158,16 @@ describe("service · webhook.service · date de l'événement", () => {
 
     expect(await service.receive(...signed(payload({ leadId: "x".repeat(200) })))).toEqual({ ok: true, duplicate: false });
     expect(leads[0].stage).toBe("ouvert");
+  });
+
+  // Revue #14 : la réception est datée à l'horloge de l'app (simulée), à côté de la date de l'expéditeur.
+  it("note l'heure de réception selon l'horloge de l'app", async () => {
+    const fake = createFakeLeadRepository([karim]);
+    const service = createWebhookService({ repository: fake.repository, ids: createFakeIds(), secret, clock });
+
+    await service.receive(...signed(payload({ occurredAt: "2026-11-23T10:00:00+01:00" })));
+
+    expect(fake.events[0].occurredAt).toEqual(new Date("2026-11-23T09:00:00.000Z"));
+    expect(fake.events[0].receivedAt).toEqual(new Date("2026-11-30T09:00:00.000Z"));
   });
 });

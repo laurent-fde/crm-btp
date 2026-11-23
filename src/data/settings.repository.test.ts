@@ -28,10 +28,22 @@ describe("données · settings.repository", () => {
     dirs.push(dir);
     const url = `file:${join(dir, "crm-btp.db")}`;
     const avant = open(url);
-    await createSettingsRepository(avant).save({ sequenceLength: 5 });
-    await createSettingsRepository(avant).save({ sequenceLength: 4 });
+    await createSettingsRepository(avant).save({ sequenceLength: 5, lostDelayDays: 7 });
+    await createSettingsRepository(avant).save({ sequenceLength: 4, lostDelayDays: 7 });
     avant.client.close();
 
-    expect(await createSettingsRepository(open(url)).load()).toEqual({ sequenceLength: 4 });
+    expect(await createSettingsRepository(open(url)).load()).toEqual({ sequenceLength: 4, lostDelayDays: 7 });
+  });
+
+  // Lot 6 : le délai avant « Perdu », enregistré à côté de la longueur.
+  it("enregistre aussi le délai avant « Perdu », retrouvé après réouverture", async () => {
+    const dir = mkdtempSync(join(tmpdir(), "crm-btp-"));
+    dirs.push(dir);
+    const url = `file:${join(dir, "crm-btp.db")}`;
+    const avant = open(url);
+    await createSettingsRepository(avant).save({ sequenceLength: 5, lostDelayDays: 3 });
+    avant.client.close();
+
+    expect(await createSettingsRepository(open(url)).load()).toEqual({ sequenceLength: 5, lostDelayDays: 3 });
   });
 });

@@ -151,3 +151,11 @@ describe("domaine · lead · actions du destinataire (lot 4)", () => {
     expect(isHot(null, now)).toBe(false);
   });
 });
+
+describe("domaine · lead · libellé « Perdu »", () => {
+  it("décrit le passage dans « Perdu »", () => {
+    expect(eventLabel({ id: "p", leadId: "l", type: "lead_perdu", occurredAt: new Date("2026-11-30T09:00:00.000Z") })).toBe(
+      "Passé dans Perdu (aucune action après le dernier e-mail)",
+    );
+  });
+});
