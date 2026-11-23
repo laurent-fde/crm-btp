@@ -7,9 +7,18 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-plex-sans);
-  --font-mono: var(--font-plex-mono);
-  --font-heading: var(--font-plex-sans);
+  --font-sans: var(--font-source-sans);
+  --font-mono: var(--font-jetbrains-mono);
+  --font-heading: var(--font-fraunces);
+  --color-stage-nouveau: var(--stage-nouveau);
+  --color-stage-envoye: var(--stage-envoye);
+  --color-stage-ouvert: var(--stage-ouvert);
+  --color-stage-clique: var(--stage-clique);
+  --color-stage-visite: var(--stage-visite);
+  --color-stage-gagne: var(--stage-gagne);
+  --color-stage-perdu: var(--stage-perdu);
+  --color-hot: var(--hot);
+  --color-hot-foreground: var(--hot-foreground);
   --color-warning: var(--warning);
   --color-warning-foreground: var(--warning-foreground);
   --color-info: var(--info);
@@ -22,7 +31,6 @@
   --color-sidebar-primary: var(--sidebar-primary);
   --color-sidebar-foreground: var(--sidebar-foreground);
   --color-sidebar: var(--sidebar);
-  --color-chart-6: var(--chart-6);
   --color-chart-5: var(--chart-5);
   --color-chart-4: var(--chart-4);
   --color-chart-3: var(--chart-3);
@@ -54,85 +62,102 @@
 }
 
 :root {
-  /* Thème C · Outil · mode clair */
-  --background: #f6f8fa;
-  --foreground: #1f2328;
-  --card: #ffffff;
-  --card-foreground: #1f2328;
-  --popover: #ffffff;
-  --popover-foreground: #1f2328;
-  --primary: #1a7f4b;
+  /* Design system B · Atelier · mode clair (brique et crème) */
+  --background: #faf6f1;
+  --foreground: #2a211c;
+  --card: #fffdfa;
+  --card-foreground: #2a211c;
+  --popover: #fffdfa;
+  --popover-foreground: #2a211c;
+  --primary: #b4532a;
   --primary-foreground: #ffffff;
-  --secondary: #eef1f4;
-  --secondary-foreground: #1f2328;
-  --muted: #eef1f4;
-  --muted-foreground: #59636e;
-  --accent: #d3f5e2;
-  --accent-foreground: #11613a;
-  --destructive: #cf222e;
-  --warning: #fff4d4;
-  --warning-foreground: #7d4e00;
-  --info: #ddf4ff;
-  --info-foreground: #0a5c8a;
-  --border: #d1d9e0;
-  --input: #c4ccd5;
-  --ring: #1a7f4b;
-  --chart-1: #1a7f4b;
-  --chart-2: #0a5c8a;
-  --chart-3: #7d4e00;
-  --chart-4: #8250df;
-  --chart-5: #cf222e;
-  /* Lot 9 : sixième couleur d'étape (Proposition). */
-  --chart-6: #0e7c86;
-  --radius: 0.375rem;
-  --sidebar: #ffffff;
-  --sidebar-foreground: #1f2328;
-  --sidebar-primary: #1a7f4b;
+  --secondary: #f2e6da;
+  --secondary-foreground: #2a211c;
+  --muted: #f2ebe3;
+  --muted-foreground: #75665b;
+  --accent: #f3e3d3;
+  --accent-foreground: #7a3416;
+  --destructive: #b42318;
+  --warning: #fbecc8;
+  --warning-foreground: #7a4a06;
+  --info: #e4eefb;
+  --info-foreground: #1f4f8f;
+  --border: #e8dccf;
+  --input: #d6c6b6;
+  --ring: #b4532a;
+  /* Étapes d'un lead : couleurs lisibles en texte sur fond clair */
+  --stage-nouveau: #5f6b7a;
+  --stage-envoye: #2563c9;
+  --stage-ouvert: #7c3aed;
+  --stage-clique: #0e7c86;
+  --stage-visite: #b45309;
+  --stage-gagne: #15803d;
+  --stage-perdu: #b42318;
+  /* Lead « chaud » */
+  --hot: #b4532a;
+  --hot-foreground: #ffffff;
+  --chart-1: #b4532a;
+  --chart-2: #2563c9;
+  --chart-3: #0e7c86;
+  --chart-4: #7c3aed;
+  --chart-5: #15803d;
+  --radius: 0.75rem;
+  --sidebar: #fffdfa;
+  --sidebar-foreground: #2a211c;
+  --sidebar-primary: #b4532a;
   --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #eef1f4;
-  --sidebar-accent-foreground: #1f2328;
-  --sidebar-border: #d1d9e0;
-  --sidebar-ring: #1a7f4b;
+  --sidebar-accent: #f2ebe3;
+  --sidebar-accent-foreground: #2a211c;
+  --sidebar-border: #e8dccf;
+  --sidebar-ring: #b4532a;
 }
 
 .dark {
-  /* Thème C · Outil · mode sombre */
-  --background: #0e1116;
-  --foreground: #e6edf3;
-  --card: #161b22;
-  --card-foreground: #e6edf3;
-  --popover: #161b22;
-  --popover-foreground: #e6edf3;
-  --primary: #2fbf71;
-  --primary-foreground: #04170c;
-  --secondary: #1c2330;
-  --secondary-foreground: #e6edf3;
-  --muted: #1c2330;
-  --muted-foreground: #8b98a8;
-  --accent: #12372a;
-  --accent-foreground: #6ee7a8;
-  --destructive: #f04f4f;
+  /* Design system B · Atelier · mode sombre */
+  --background: #1b1512;
+  --foreground: #f3ebe4;
+  --card: #251d19;
+  --card-foreground: #f3ebe4;
+  --popover: #251d19;
+  --popover-foreground: #f3ebe4;
+  --primary: #e07a4b;
+  --primary-foreground: #1b1512;
+  --secondary: #33281f;
+  --secondary-foreground: #f3ebe4;
+  --muted: #2d2420;
+  --muted-foreground: #b3a397;
+  --accent: #3d2a1f;
+  --accent-foreground: #f2b48f;
+  --destructive: #ff7b6b;
   --warning: #3a2c0b;
   --warning-foreground: #f5c451;
-  --info: #0f2e3d;
-  --info-foreground: #7cc7ee;
-  --border: #2a3340;
-  --input: #36414f;
-  --ring: #2fbf71;
-  --chart-1: #2fbf71;
-  --chart-2: #7cc7ee;
-  --chart-3: #f5c451;
-  --chart-4: #b392f0;
-  --chart-5: #f04f4f;
-  --chart-6: #3dd6d0;
-  --sidebar: #161b22;
-  --sidebar-foreground: #e6edf3;
-  --sidebar-primary: #2fbf71;
-  --sidebar-primary-foreground: #04170c;
-  --sidebar-accent: #1c2330;
-  --sidebar-accent-foreground: #e6edf3;
-  --sidebar-border: #2a3340;
-  --sidebar-ring: #2fbf71;
+  --info: #13253d;
+  --info-foreground: #8fb8f0;
+  --border: #3a2f29;
+  --input: #54463d;
+  --ring: #e07a4b;
+  --stage-nouveau: #9aa5b4;
+  --stage-envoye: #7aa7ff;
+  --stage-ouvert: #b794f6;
+  --stage-clique: #4fd1c5;
+  --stage-visite: #f6ad55;
+  --stage-gagne: #4ade80;
+  --stage-perdu: #ff7b72;
+  --hot: #e07a4b;
+  --hot-foreground: #1b1512;
+  --chart-1: #e07a4b;
+  --chart-2: #7aa7ff;
+  --chart-3: #4fd1c5;
+  --chart-4: #b794f6;
+  --chart-5: #4ade80;
+  --sidebar: #251d19;
+  --sidebar-foreground: #f3ebe4;
+  --sidebar-primary: #e07a4b;
+  --sidebar-primary-foreground: #1b1512;
+  --sidebar-accent: #2d2420;
+  --sidebar-accent-foreground: #f3ebe4;
+  --sidebar-border: #3a2f29;
+  --sidebar-ring: #e07a4b;
 }
 
 @layer base {
@@ -147,5 +172,8 @@
   }
   html {
     @apply font-sans;
+  }
+  h1, h2, h3 {
+    @apply font-heading;
   }
 }

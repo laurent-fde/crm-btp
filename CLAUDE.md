@@ -36,7 +36,12 @@ Une démo de mini CRM de suivi de leads froids (artisans du bâtiment), pilotée
 Chaque test est à côté du fichier testé (`*.test.ts`).
 
 ## Design system
-À définir (étape design system).
+- B · Atelier (brique et crème, formes arrondies), choisi parmi 3 propositions dans `design-options.html`.
+- Thème dans `src/app/globals.css` : `:root` pour le clair, `.dark` pour le sombre. Toute couleur est une variable du thème, jamais une valeur en dur.
+- Couleurs d'étape : `stage-nouveau`, `stage-envoye`, `stage-ouvert`, `stage-clique`, `stage-visite`, `stage-gagne`, `stage-perdu` ; lead chaud : `hot` / `hot-foreground` (ex. `text-stage-clique`, `bg-hot`).
+- Chaque écran fonctionne en clair ET en sombre.
+- Composants shadcn dans `src/presentation/components/ui/` (`pnpm dlx shadcn@latest add <composant>`). Boutons et badges en forme de pilule.
+- Polices : Fraunces (titres h1-h3), Source Sans 3 (texte), JetBrains Mono (dates, codes).
 
 ## Git
 - On travaille sur dev. Jamais de commit direct sur main.
