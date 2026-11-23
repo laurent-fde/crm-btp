@@ -2,11 +2,15 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const addLead = vi.fn();
 const updateLead = vi.fn();
+const sendNextEmail = vi.fn();
 const refresh = vi.fn();
-vi.mock("@/composition", () => ({ getLeadService: () => ({ addLead, updateLead }) }));
+vi.mock("@/composition", () => ({
+  getLeadService: () => ({ addLead, updateLead }),
+  getSequenceService: () => ({ sendNextEmail }),
+}));
 vi.mock("next/cache", () => ({ refresh: () => refresh() }));
 
-import { addLeadAction, updateLeadAction } from "./lead.action";
+import { addLeadAction, sendNextEmailAction, updateLeadAction } from "./lead.action";
 
 function form(values: Record<string, string>) {
   const data = new FormData();
@@ -104,6 +108,33 @@ describe("présentation · lead.action · updateLeadAction (lot 2)", () => {
     const state = await updateLeadAction(null, form({ leadId: "lead-1", name: "", email: "karim@exemple.fr" }));
 
     expect(state).toMatchObject({ ok: false, errors: { name: "Le nom est obligatoire" }, values: { name: "" } });
+    expect(refresh).not.toHaveBeenCalled();
+  });
+});
+
+describe("présentation · lead.action · sendNextEmailAction (lot 3)", () => {
+  beforeEach(() => {
+    sendNextEmail.mockReset();
+    refresh.mockReset();
+  });
+
+  // Critère 1 (lot 3) : l'envoi passe par le service, puis la carte change de colonne.
+  it("envoie l'e-mail suivant par le service, puis redessine", async () => {
+    sendNextEmail.mockResolvedValue({ ok: true, step: 1 });
+
+    const state = await sendNextEmailAction(null, form({ leadId: "lead-1" }));
+
+    expect(sendNextEmail).toHaveBeenCalledWith("lead-1");
+    expect(refresh).toHaveBeenCalledOnce();
+    expect(state).toEqual({ ok: true });
+  });
+
+  it("renvoie le message du service sans redessiner", async () => {
+    sendNextEmail.mockResolvedValue({ ok: false, message: "Séquence terminée : les 3 e-mails sont partis." });
+
+    const state = await sendNextEmailAction(null, form({ leadId: "lead-1" }));
+
+    expect(state).toEqual({ ok: false, message: "Séquence terminée : les 3 e-mails sont partis." });
     expect(refresh).not.toHaveBeenCalled();
   });
 });

@@ -44,14 +44,29 @@ export type Lead = {
 export type BoardColumn = { stage: Stage; label: string; leads: Lead[] };
 
 // Historique d'un lead : chaque événement (quoi, quand). Les lots suivants ajoutent leurs types.
-export const EVENT_TYPES = ["lead_cree"] as const;
+export const EVENT_TYPES = ["lead_cree", "email_envoye"] as const;
 export type LeadEventType = (typeof EVENT_TYPES)[number];
 
-export const EVENT_LABELS: Record<LeadEventType, string> = {
-  lead_cree: "Lead créé",
+// emailStep : le numéro de l'e-mail dans la séquence ; emailFinal : c'était le dernier e-mail
+// de la séquence au moment de l'envoi (événements « email_envoye » seulement).
+export type LeadEvent = {
+  id: string;
+  leadId: string;
+  type: LeadEventType;
+  occurredAt: Date;
+  emailStep?: number;
+  emailFinal?: boolean;
 };
 
-export type LeadEvent = { id: string; leadId: string; type: LeadEventType; occurredAt: Date };
+// Le libellé d'un événement dans l'historique.
+export function eventLabel(event: LeadEvent): string {
+  switch (event.type) {
+    case "lead_cree":
+      return "Lead créé";
+    case "email_envoye":
+      return `E-mail ${event.emailStep} envoyé`;
+  }
+}
 
 // L'historique se lit du plus ancien au plus récent (tri stable : l'ordre d'écriture départage).
 export function sortHistory(events: readonly LeadEvent[]): LeadEvent[] {

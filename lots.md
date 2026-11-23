@@ -4,7 +4,7 @@ La V1 décrite dans `INTENT.md`, découpée en lots. Un lot = une chose que l'ut
 
 ## Choix de cadrage
 Points qu'`INTENT.md` ne précise pas, tranchés au découpage :
-- **Séquence** : 3 e-mails. Le délai avant « Perdu » (7 jours par défaut, réglable) démarre après le 3ᵉ.
+- **Séquence** : 3 e-mails par défaut, nombre réglable (1 à 10) dans « Réglages ». Un lead en cours suit le réglage, sauf s'il a déjà reçu le dernier e-mail : il reste terminé. Le délai avant « Perdu » (7 jours par défaut, réglable) démarre après le dernier e-mail de la séquence.
 - **Lead « chaud »** : une action (ouvert, cliqué, page visitée) dans les 48 dernières heures, selon l'horloge de l'app.
 
 ## Lot 1 · Ajouter un lead et le voir dans « Nouveau »
@@ -21,10 +21,11 @@ Points qu'`INTENT.md` ne précise pas, tranchés au découpage :
 - [ ] Étant donné une fiche, quand j'efface le nom et que j'enregistre, alors la modification est refusée avec le même message qu'à l'ajout.
 
 ## Lot 3 · Simuler l'envoi de la séquence d'e-mails
-**Parcours** : sur la fiche d'un lead, j'envoie l'e-mail suivant de la séquence (1, 2, puis 3). L'envoi passe par le fournisseur d'e-mails, ici un faux qui enregistre l'envoi sans rien expédier. Le lead passe dans « E-mail envoyé ».
+**Parcours** : sur la fiche d'un lead, j'envoie l'e-mail suivant de la séquence (1, 2, puis 3 avec le réglage par défaut). Le nombre d'e-mails se règle dans « Réglages ». L'envoi passe par le fournisseur d'e-mails, ici un faux qui enregistre l'envoi sans rien expédier. Le lead passe dans « E-mail envoyé ».
 - [ ] Étant donné un lead « Nouveau », quand je simule l'envoi de l'e-mail 1, alors il passe dans « E-mail envoyé », et l'historique montre « E-mail 1 envoyé » avec la date.
 - [ ] Étant donné un lead qui a reçu les e-mails 1 et 2, quand j'envoie l'e-mail suivant, alors c'est l'e-mail 3.
 - [ ] Étant donné un lead qui a reçu les 3 e-mails, quand j'ouvre sa fiche, alors l'envoi n'est plus proposé (« Séquence terminée »).
+- [ ] Étant donné la séquence réglée à 5 e-mails, quand j'ouvre la fiche d'un lead qui a reçu les 3 premiers, alors l'e-mail 4 est proposé.
 - [ ] Étant donné un envoi simulé, alors il est passé par le fournisseur d'e-mails (le faux fournisseur l'a enregistré).
 
 ## Lot 4 · Simuler une action du destinataire et voir le lead avancer
@@ -43,8 +44,8 @@ Points qu'`INTENT.md` ne précise pas, tranchés au découpage :
 - [ ] Étant donné un événement mal formé (lead inconnu, type inconnu), alors il est refusé (400) sans rien modifier.
 
 ## Lot 6 · Simuler le passage du temps et voir un lead passer dans « Perdu »
-**Parcours** : j'avance l'horloge de l'app (+1 jour, +7 jours) sans attendre. Un lead qui a reçu ses 3 e-mails sans aucune action passe dans « Perdu » une fois le délai écoulé. Je peux changer ce délai, qui est de 7 jours par défaut.
-- [ ] Étant donné un lead qui a reçu ses 3 e-mails sans aucune action, quand j'avance l'horloge de 7 jours, alors il passe dans « Perdu ».
+**Parcours** : j'avance l'horloge de l'app (+1 jour, +7 jours) sans attendre. Un lead qui a reçu tous les e-mails de la séquence sans aucune action passe dans « Perdu » une fois le délai écoulé. Je peux changer ce délai, qui est de 7 jours par défaut.
+- [ ] Étant donné un lead qui a reçu tous les e-mails de la séquence sans aucune action, quand j'avance l'horloge de 7 jours, alors il passe dans « Perdu ».
 - [ ] Étant donné un lead qui a reçu une action pendant ces 7 jours, quand j'avance l'horloge, alors il ne passe pas dans « Perdu ».
 - [ ] Étant donné un délai réglé à 3 jours, quand j'avance l'horloge de 3 jours, alors le lead sans action passe dans « Perdu ».
 - [ ] Étant donné une horloge avancée, quand je redémarre l'app, alors la date simulée et les leads « Perdu » sont conservés.

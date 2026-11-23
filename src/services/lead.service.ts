@@ -2,7 +2,7 @@
 
 import { z } from "zod";
 import {
-  EVENT_LABELS,
+  eventLabel,
   groupByStage,
   sortHistory,
   SUGGESTED_TRADES,
@@ -10,8 +10,10 @@ import {
   type Lead,
   type LeadEventType,
 } from "./domain/lead";
+import { sequenceStatus, type SequenceStatus } from "./domain/sequence";
+import { withDefaults } from "./domain/settings";
 import { leadSchema } from "./lead.schema";
-import type { Clock, IdGenerator, LeadRepository } from "./ports";
+import type { Clock, IdGenerator, LeadRepository, SettingsRepository } from "./ports";
 
 // Saisie reçue (formulaire, action) : tous les champs facultatifs, c'est le schéma qui décide.
 export type LeadInput = {
@@ -33,10 +35,15 @@ export type AddLeadResult = SaveLeadResult;
 export type UpdateLeadResult = SaveLeadResult;
 
 export type LeadHistoryItem = { id: string; type: LeadEventType; label: string; occurredAt: Date };
-export type LeadDetail = { lead: Lead; history: LeadHistoryItem[] };
+export type LeadDetail = { lead: Lead; history: LeadHistoryItem[]; sequence: SequenceStatus };
 export type LeadDetailResult = ({ ok: true } & LeadDetail) | { ok: false; message: string };
 
-export type LeadServiceDeps = { repository: LeadRepository; clock: Clock; ids: IdGenerator };
+export type LeadServiceDeps = {
+  repository: LeadRepository;
+  clock: Clock;
+  ids: IdGenerator;
+  settings: SettingsRepository;
+};
 
 const SAVE_FAILED = "Enregistrement impossible pour le moment. Réessaie dans un instant.";
 const NOT_FOUND = "Ce lead n'existe pas ou plus.";
@@ -62,7 +69,7 @@ function parseLead(input: LeadInput): Parsed {
   return { ok: false, errors };
 }
 
-export function createLeadService({ repository, clock, ids }: LeadServiceDeps) {
+export function createLeadService({ repository, clock, ids, settings }: LeadServiceDeps) {
   return {
     async addLead(input: LeadInput): Promise<AddLeadResult> {
       const parsed = parseLead(input);
@@ -98,13 +105,15 @@ export function createLeadService({ repository, clock, ids }: LeadServiceDeps) {
       try {
         const lead = await repository.findById(id);
         if (!lead) return { ok: false, message: NOT_FOUND };
-        const history = sortHistory(await repository.listEvents(id)).map((event) => ({
+        const events = sortHistory(await repository.listEvents(id));
+        const history = events.map((event) => ({
           id: event.id,
           type: event.type,
-          label: EVENT_LABELS[event.type],
+          label: eventLabel(event),
           occurredAt: event.occurredAt,
         }));
-        return { ok: true, lead, history };
+        const { sequenceLength } = withDefaults(await settings.load());
+        return { ok: true, lead, history, sequence: sequenceStatus(lead.stage, events, sequenceLength) };
       } catch {
         // Base injoignable : un message dans la fiche, le tableau reste affiché.
         return { ok: false, message: LOAD_FAILED };

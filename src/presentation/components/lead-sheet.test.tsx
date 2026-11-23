@@ -24,15 +24,18 @@ const detail: LeadDetailResult = {
   },
   history: [
     { id: "e1", type: "lead_cree", label: "Lead créé", occurredAt: new Date("2026-11-23T09:00:00.000Z") },
+    { id: "e2", type: "email_envoye", label: "E-mail 1 envoyé", occurredAt: new Date("2026-11-23T10:30:00.000Z") },
   ],
+  sequence: { sent: 1, total: 3, next: 2, blockedReason: null },
 };
 
 const action = vi.fn(async () => ({ ok: true as const }));
+const sendAction = vi.fn(async () => ({ ok: true as const }));
 
 describe("présentation · LeadSheet (lot 2)", () => {
   // Critère 1 (lot 2) : la fiche montre les 7 champs et l'historique, qui commence par « Lead créé » avec la date.
   it("montre les 7 champs préremplis et l'historique, qui commence par « Lead créé » daté à l'heure de Paris", () => {
-    render(<LeadSheet result={detail} action={action} trades={[]} />);
+    render(<LeadSheet result={detail} action={action} sendAction={sendAction} trades={[]} />);
 
     expect(screen.getByRole("heading", { name: "Karim Benali" })).toBeDefined();
     const valeurs: Record<string, string> = {
@@ -53,8 +56,18 @@ describe("présentation · LeadSheet (lot 2)", () => {
     expect(lignes[0].textContent).toContain("23/11/2026 à 10:00");
   });
 
+  // Critère 1 (lot 3) : l'historique montre « E-mail 1 envoyé » avec la date ; la fiche propose l'e-mail suivant.
+  it("montre « E-mail 1 envoyé » daté dans l'historique et propose l'e-mail 2", () => {
+    render(<LeadSheet result={detail} action={action} sendAction={sendAction} trades={[]} />);
+
+    const lignes = within(screen.getByRole("list", { name: "Historique" })).getAllByRole("listitem");
+    expect(lignes[1].textContent).toContain("E-mail 1 envoyé");
+    expect(lignes[1].textContent).toContain("23/11/2026 à 11:30");
+    expect(screen.getByRole("button", { name: "Envoyer l'e-mail 2" })).toBeDefined();
+  });
+
   it("affiche le message reçu quand la fiche ne peut pas être montrée (lead inconnu, base en panne)", () => {
-    render(<LeadSheet result={{ ok: false, message: "Ce lead n'existe pas ou plus." }} action={action} trades={[]} />);
+    render(<LeadSheet result={{ ok: false, message: "Ce lead n'existe pas ou plus." }} action={action} sendAction={sendAction} trades={[]} />);
 
     expect(screen.getByText("Ce lead n'existe pas ou plus.")).toBeDefined();
     expect(screen.queryByLabelText("Nom")).toBeNull();
@@ -63,7 +76,7 @@ describe("présentation · LeadSheet (lot 2)", () => {
   // Revue PR #9 : fermer remplace l'adresse (Retour ne rouvre pas la fiche) et le panneau se ferme sans attendre le serveur.
   it("se ferme tout de suite et remplace l'adresse par le tableau", async () => {
     replace.mockReset();
-    render(<LeadSheet result={detail} action={action} trades={[]} />);
+    render(<LeadSheet result={detail} action={action} sendAction={sendAction} trades={[]} />);
 
     fireEvent.click(screen.getByRole("button", { name: "Fermer" }));
 
