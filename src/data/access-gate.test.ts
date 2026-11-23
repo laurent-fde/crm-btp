@@ -9,14 +9,15 @@ describe("données · access-gate · resolveAccessPassword", () => {
     expect(resolveAccessPassword({ APP_PASSWORD: "s3cret" })).toBe("s3cret");
   });
 
-  it("ne verrouille rien en local quand il manque (ou est vide)", () => {
+  it("ne verrouille rien quand il manque (ou est vide)", () => {
     expect(resolveAccessPassword({})).toBeNull();
     expect(resolveAccessPassword({ APP_PASSWORD: "" })).toBeNull();
   });
 
-  it("lève une erreur sur un déploiement Vercel sans mot de passe", () => {
-    expect(() => resolveAccessPassword({ VERCEL_ENV: "production" })).toThrow(/APP_PASSWORD manquant/);
-    expect(() => resolveAccessPassword({ VERCEL_ENV: "preview" })).toThrow(/APP_PASSWORD manquant/);
+  // Verrou facultatif : sans APP_PASSWORD, l'app est ouverte, y compris sur Vercel.
+  it("ne verrouille rien sur Vercel non plus quand il manque", () => {
+    expect(resolveAccessPassword({ VERCEL_ENV: "production" })).toBeNull();
+    expect(resolveAccessPassword({ VERCEL_ENV: "preview", APP_PASSWORD: "" })).toBeNull();
   });
 });
 

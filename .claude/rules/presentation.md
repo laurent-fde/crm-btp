@@ -8,7 +8,7 @@ paths:
 Pages et webhook (`src/app/`), actions, composants et providers (`src/presentation/`).
 
 - Obtient ses services par `@/composition` (`getLeadService()`), jamais par `@/data` ni `@libsql`. Les types viennent de `@/services/…` (`import type`).
-- `src/proxy.ts` (verrou par mot de passe) est une porte d'entrée hors couches : il n'importe que `@/data/access-gate` et `next/server`, et traduit la réponse en `401` / `503`. Le webhook reste exclu de son matcher.
+- `src/proxy.ts` (verrou par mot de passe) est une porte d'entrée hors couches : il n'importe que `@/data/access-gate` et `next/server`, et traduit un refus en `401`. Sans `APP_PASSWORD`, il laisse tout passer. Le webhook reste exclu de son matcher.
 - Aucune règle métier : ni validation, ni décision d'étape, ni calcul de délai.
 - Le webhook (`src/app/api/webhooks/`) est une porte d'entrée comme l'écran : il lit la requête (corps brut + signature), appelle le service, traduit le résultat en code HTTP. Rien d'autre.
 - N'utilise que les composants du design system (`src/presentation/components/ui/`). Composant manquant : `pnpm dlx shadcn@latest add <composant>`.

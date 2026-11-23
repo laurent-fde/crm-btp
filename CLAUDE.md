@@ -28,7 +28,7 @@ Une démo de mini CRM de suivi de leads froids (artisans du bâtiment), pilotée
   - `ports.ts` : les interfaces dont le service a besoin (dépôts, `Clock`, plus tard `EmailSender`).
   - `*.service.ts` : cas d'usage. Reçoivent leurs ports en paramètre (`createXService({ repository, clock })`) et valident toute saisie.
 - Données : `src/data/`. Adaptateurs vers l'extérieur : base libsql, horloge système, fournisseur d'e-mails. N'importe du service que `@/services/ports`.
-- Proxy : `src/proxy.ts`, le verrou d'accès de la démo (mot de passe `APP_PASSWORD`) avant toute page ou action ; le webhook en est exclu. Seule exception : il importe `@/data/access-gate` (et rien d'autre de `src/data/`), pour ne pas charger la base. ESLint le vérifie.
+- Proxy : `src/proxy.ts`, le verrou d'accès facultatif de la démo (mot de passe `APP_PASSWORD` ; sans lui, l'app est ouverte) avant toute page ou action ; le webhook en est exclu. Seule exception : il importe `@/data/access-gate` (et rien d'autre de `src/data/`), pour ne pas charger la base. ESLint le vérifie.
 - Composition : `src/composition.ts`, le seul fichier qui branche les vrais adaptateurs aux services (`getXService()`). Ce n'est pas une couche, c'est le câblage.
 - L'heure passe toujours par le port `Clock`, jamais `new Date()` dans le domaine ou le service : c'est ce qui permet de simuler le passage du temps.
 - Changer de base (SQLite → Turso) ou de fournisseur d'e-mails ne modifie que `src/data/` (et au plus `src/composition.ts`).

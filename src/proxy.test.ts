@@ -35,14 +35,12 @@ describe("proxy · verrou d'accès (mot de passe sur toute l'app)", () => {
     expect(passes(proxy(request(basic("s3cret"))))).toBe(true);
   });
 
-  // Revue #12 : APP_PASSWORD oublié sur Vercel → une 503 qui dit pourquoi, et rien ne passe.
-  it("répond 503 avec la cause quand APP_PASSWORD manque sur Vercel", async () => {
+  // Verrou facultatif : sans APP_PASSWORD, l'app en ligne est ouverte (choix de Laurent, données fictives).
+  it("laisse tout passer sur Vercel sans APP_PASSWORD", () => {
     vi.stubEnv("APP_PASSWORD", "");
     vi.stubEnv("VERCEL_ENV", "production");
 
-    const response = proxy(request(basic("n-importe-quoi")));
-    expect(response.status).toBe(503);
-    expect(await response.text()).toMatch(/APP_PASSWORD manquant/);
+    expect(passes(proxy(request()))).toBe(true);
   });
 });
 
