@@ -44,6 +44,8 @@ export interface LeadRepository {
   findEventByExternalId(externalId: string): Promise<LeadEvent | null>;
   // Pour chaque lead, la date de son dernier événement parmi ces types.
   lastEventDates(types: readonly LeadEventType[]): Promise<Record<string, Date>>;
+  // Nombre d'e-mails envoyés par lead (absent = aucun).
+  emailCounts(): Promise<Record<string, number>>;
 }
 
 // Réglages de l'app : seulement ce qui a été enregistré (les valeurs par défaut sont dans le domaine).

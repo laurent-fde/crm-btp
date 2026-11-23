@@ -10,6 +10,7 @@ import {
   simulateActionAction,
   updateLeadAction,
 } from "@/presentation/actions/lead.action";
+import { BoardStats } from "@/presentation/components/board-stats";
 import { KanbanBoard } from "@/presentation/components/kanban-board";
 import { Button } from "@/presentation/components/ui/button";
 import { LeadSheet } from "@/presentation/components/lead-sheet";
@@ -33,8 +34,13 @@ const markLostLeads = cache(async () => {
 async function Board() {
   await connection();
   await markLostLeads();
-  const columns = await (await getLeadService()).getBoard();
-  return <KanbanBoard columns={columns} />;
+  const { columns, stats, sequenceLength } = await (await getLeadService()).getBoard();
+  return (
+    <div className="grid gap-4">
+      <BoardStats stats={stats} />
+      <KanbanBoard columns={columns} sequence={stats.sequence} sequenceLength={sequenceLength} />
+    </div>
+  );
 }
 
 // Les réglages, lus à chaque requête.

@@ -42,7 +42,8 @@ export type Lead = {
 };
 
 // Une carte du tableau : le lead, et s'il est « chaud ».
-export type BoardLead = Lead & { hot?: boolean };
+// emailStep : où le lead en est dans la séquence (e-mails reçus, bornés à la longueur réglée ; 0 = aucun).
+export type BoardLead = Lead & { hot?: boolean; emailStep?: number };
 export type BoardColumn<T extends Lead = BoardLead> = { stage: Stage; label: string; leads: T[] };
 
 // Historique d'un lead : chaque événement (quoi, quand). Les lots suivants ajoutent leurs types.
