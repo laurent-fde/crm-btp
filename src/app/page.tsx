@@ -2,7 +2,12 @@ import { Settings2 } from "lucide-react";
 import { connection } from "next/server";
 import { Suspense } from "react";
 import { getLeadFormOptions, getLeadService, getSettingsService } from "@/composition";
-import { addLeadAction, sendNextEmailAction, updateLeadAction } from "@/presentation/actions/lead.action";
+import {
+  addLeadAction,
+  sendNextEmailAction,
+  simulateActionAction,
+  updateLeadAction,
+} from "@/presentation/actions/lead.action";
 import { KanbanBoard } from "@/presentation/components/kanban-board";
 import { Button } from "@/presentation/components/ui/button";
 import { LeadSheet } from "@/presentation/components/lead-sheet";
@@ -32,7 +37,16 @@ async function OpenLead({ searchParams, trades }: { searchParams: SearchParams; 
   const { lead } = await searchParams;
   if (typeof lead !== "string" || !lead) return null;
   const result = await getLeadService().getLeadDetail(lead);
-  return <LeadSheet key={lead} result={result} action={updateLeadAction} sendAction={sendNextEmailAction} trades={trades} />;
+  return (
+    <LeadSheet
+      key={lead}
+      result={result}
+      action={updateLeadAction}
+      sendAction={sendNextEmailAction}
+      simulateAction={simulateActionAction}
+      trades={trades}
+    />
+  );
 }
 
 export default function Home({ searchParams }: { searchParams: SearchParams }) {

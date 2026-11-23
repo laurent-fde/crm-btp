@@ -7,10 +7,13 @@ import { createLeadRepository } from "@/data/lead.repository";
 import { randomIds } from "@/data/random-id";
 import { createSettingsRepository } from "@/data/settings.repository";
 import { createSimulatedEmailSender } from "@/data/simulated-email-sender";
+import { resolveWebhookSecret } from "@/data/webhook-secret";
 import { systemClock } from "@/data/system-clock";
 import { createLeadService, getSuggestedTrades } from "@/services/lead.service";
 import { createSequenceService } from "@/services/sequence.service";
 import { createSettingsService } from "@/services/settings.service";
+import { createSimulationService } from "@/services/simulation.service";
+import { createWebhookService } from "@/services/webhook.service";
 
 export function getLeadService() {
   const db = getDatabase();
@@ -35,6 +38,25 @@ export function getSequenceService() {
     settings: createSettingsRepository(db),
     clock: systemClock,
     ids: randomIds,
+  });
+}
+
+// Les actions du destinataire : la porte d'entrée webhook (signée avec le secret partagé)…
+export function getWebhookService() {
+  return createWebhookService({
+    repository: createLeadRepository(getDatabase()),
+    ids: randomIds,
+    secret: resolveWebhookSecret(process.env),
+  });
+}
+
+// … et la simulation depuis l'app, qui signe et passe par cette même porte.
+export function getSimulationService() {
+  return createSimulationService({
+    webhook: getWebhookService(),
+    secret: resolveWebhookSecret(process.env),
+    clock: systemClock,
+    ids: { next: () => `sim-${randomIds.next()}` },
   });
 }
 

@@ -181,7 +181,7 @@ describe("service · sequence.service · sendNextEmail", () => {
 
   it("renvoie un message si l'envoi ne peut pas être enregistré", async () => {
     const { service, repository } = setup();
-    repository.recordEmailSent = async () => {
+    repository.recordEvent = async () => {
       throw new Error("base injoignable");
     };
 

@@ -53,6 +53,9 @@ export const MIGRATIONS: readonly string[] = [
   `CREATE TABLE settings (key TEXT PRIMARY KEY, value TEXT NOT NULL)`,
   // Lot 3 : l'e-mail envoyé était le dernier de la séquence (1), ou non (0).
   `ALTER TABLE lead_events ADD COLUMN email_final INTEGER`,
+  // Lot 4 : l'identifiant donné par l'expéditeur d'un webhook ; un même événement n'est enregistré qu'une fois.
+  `ALTER TABLE lead_events ADD COLUMN external_id TEXT`,
+  `CREATE UNIQUE INDEX lead_events_external_id ON lead_events (external_id) WHERE external_id IS NOT NULL`,
 ];
 
 async function appliedVersion(client: Client): Promise<number | null> {

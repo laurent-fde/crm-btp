@@ -12,6 +12,7 @@ import {
   SheetTitle,
 } from "@/presentation/components/ui/sheet";
 import { formatDateTime } from "./format-date";
+import { ActionPanel } from "./action-panel";
 import { LeadForm } from "./lead-form";
 import { SequencePanel } from "./sequence-panel";
 
@@ -23,11 +24,12 @@ type LeadSheetProps = {
   result: LeadDetailResult;
   action: LeadAction;
   sendAction: SendAction;
+  simulateAction: SendAction;
   trades: readonly string[];
 };
 
 // La fiche d'un lead, dans un panneau latéral ouvert par l'adresse (?lead=<id>). Fermer revient au tableau.
-export function LeadSheet({ result, action, sendAction, trades }: LeadSheetProps) {
+export function LeadSheet({ result, action, sendAction, simulateAction, trades }: LeadSheetProps) {
   const router = useRouter();
   const [open, setOpen] = useState(true);
   // Le panneau se ferme tout de suite ; l'adresse est remplacée (Retour ne rouvre pas la fiche).
@@ -59,6 +61,10 @@ export function LeadSheet({ result, action, sendAction, trades }: LeadSheetProps
                 successMessage="Modifications enregistrées"
               />
               <SequencePanel leadId={detail.lead.id} sequence={detail.sequence} action={sendAction} />
+              {/* Une action n'a de sens qu'après un e-mail envoyé ; un lead gagné ne bouge plus. */}
+              {detail.sequence.sent > 0 && detail.lead.stage !== "gagne" && (
+                <ActionPanel leadId={detail.lead.id} action={simulateAction} />
+              )}
               <section aria-labelledby="fiche-historique" className="grid gap-3">
                 <h3 id="fiche-historique" className="text-base font-semibold">
                   Historique

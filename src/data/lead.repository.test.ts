@@ -170,7 +170,7 @@ describe("données · lead.repository", () => {
     const repository = createLeadRepository(open(":memory:"));
     await repository.insert(karim, created(karim));
 
-    await repository.recordEmailSent(email1, { from: "nouveau", to: "email_envoye" });
+    await repository.recordEvent(email1, { from: "nouveau", to: "email_envoye" });
 
     expect((await repository.findById("lead-1"))?.stage).toBe("email_envoye");
     expect(await repository.listEvents("lead-1")).toEqual([created(karim), email1]);
@@ -182,7 +182,7 @@ describe("données · lead.repository", () => {
     await repository.insert(karim, created(karim));
     const dernier: LeadEvent = { ...email1, emailFinal: true };
 
-    await repository.recordEmailSent(dernier, null);
+    await repository.recordEvent(dernier, null);
 
     expect((await repository.listEvents("lead-1")).at(-1)).toEqual(dernier);
   });
@@ -191,7 +191,7 @@ describe("données · lead.repository", () => {
     const repository = createLeadRepository(open(":memory:"));
     await repository.insert({ ...karim, stage: "ouvert" }, created(karim));
 
-    await repository.recordEmailSent(email1, { from: "nouveau", to: "email_envoye" });
+    await repository.recordEvent(email1, { from: "nouveau", to: "email_envoye" });
 
     expect((await repository.findById("lead-1"))?.stage).toBe("ouvert");
     expect(await repository.listEvents("lead-1")).toHaveLength(2);
@@ -200,13 +200,60 @@ describe("données · lead.repository", () => {
   it("refuse d'enregistrer deux fois le même e-mail de la séquence, sans rien écrire", async () => {
     const repository = createLeadRepository(open(":memory:"));
     await repository.insert(karim, created(karim));
-    await repository.recordEmailSent(email1, null);
+    await repository.recordEvent(email1, null);
 
     await expect(
-      repository.recordEmailSent({ ...email1, id: "email-1-bis" }, { from: "nouveau", to: "email_envoye" }),
+      repository.recordEvent({ ...email1, id: "email-1-bis" }, { from: "nouveau", to: "email_envoye" }),
     ).rejects.toThrow();
 
     expect(await repository.listEvents("lead-1")).toHaveLength(2);
     expect((await repository.findById("lead-1"))?.stage).toBe("nouveau");
+  });
+
+  const ouvert: LeadEvent = {
+    id: "action-1",
+    leadId: "lead-1",
+    type: "email_ouvert",
+    occurredAt: new Date("2026-11-25T09:00:00.000Z"),
+    externalId: "evt-1",
+  };
+
+  // Lot 4 : l'action reçue garde l'identifiant de l'expéditeur, retrouvable pour le dédoublonnage.
+  it("garde l'identifiant de l'expéditeur et retrouve l'événement par cet identifiant", async () => {
+    const repository = createLeadRepository(open(":memory:"));
+    await repository.insert(karim, created(karim));
+
+    await repository.recordEvent(ouvert, { from: "nouveau", to: "ouvert" });
+
+    expect(await repository.findEventByExternalId("evt-1")).toEqual(ouvert);
+    expect(await repository.findEventByExternalId("evt-2")).toBeNull();
+    expect((await repository.findById("lead-1"))?.stage).toBe("ouvert");
+  });
+
+  it("refuse le même événement de l'expéditeur deux fois, sans rien écrire", async () => {
+    const repository = createLeadRepository(open(":memory:"));
+    await repository.insert(karim, created(karim));
+    await repository.recordEvent(ouvert, null);
+
+    await expect(repository.recordEvent({ ...ouvert, id: "action-2" }, { from: "nouveau", to: "ouvert" })).rejects.toThrow();
+
+    expect(await repository.listEvents("lead-1")).toHaveLength(2);
+    expect((await repository.findById("lead-1"))?.stage).toBe("nouveau");
+  });
+
+  // Critère 4 (lot 4) : la date de la dernière action de chaque lead, pour le badge « Chaud ».
+  it("donne la date du dernier événement de chaque lead, pour les types demandés", async () => {
+    const repository = createLeadRepository(open(":memory:"));
+    await repository.insert(karim, created(karim));
+    await repository.insert({ ...karim, id: "lead-2" }, { ...created(karim), id: "c2", leadId: "lead-2" });
+    await repository.recordEvent(ouvert, null);
+    await repository.recordEvent(
+      { id: "action-2", leadId: "lead-1", type: "lien_clique", occurredAt: new Date("2026-11-26T09:00:00.000Z"), externalId: "evt-2" },
+      null,
+    );
+
+    expect(await repository.lastEventDates(["email_ouvert", "lien_clique", "page_visitee"])).toEqual({
+      "lead-1": new Date("2026-11-26T09:00:00.000Z"),
+    });
   });
 });

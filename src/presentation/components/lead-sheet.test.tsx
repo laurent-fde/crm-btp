@@ -31,11 +31,12 @@ const detail: LeadDetailResult = {
 
 const action = vi.fn(async () => ({ ok: true as const }));
 const sendAction = vi.fn(async () => ({ ok: true as const }));
+const simulateAction = vi.fn(async () => ({ ok: true as const }));
 
 describe("présentation · LeadSheet (lot 2)", () => {
   // Critère 1 (lot 2) : la fiche montre les 7 champs et l'historique, qui commence par « Lead créé » avec la date.
   it("montre les 7 champs préremplis et l'historique, qui commence par « Lead créé » daté à l'heure de Paris", () => {
-    render(<LeadSheet result={detail} action={action} sendAction={sendAction} trades={[]} />);
+    render(<LeadSheet result={detail} action={action} sendAction={sendAction} simulateAction={simulateAction} trades={[]} />);
 
     expect(screen.getByRole("heading", { name: "Karim Benali" })).toBeDefined();
     const valeurs: Record<string, string> = {
@@ -58,7 +59,7 @@ describe("présentation · LeadSheet (lot 2)", () => {
 
   // Critère 1 (lot 3) : l'historique montre « E-mail 1 envoyé » avec la date ; la fiche propose l'e-mail suivant.
   it("montre « E-mail 1 envoyé » daté dans l'historique et propose l'e-mail 2", () => {
-    render(<LeadSheet result={detail} action={action} sendAction={sendAction} trades={[]} />);
+    render(<LeadSheet result={detail} action={action} sendAction={sendAction} simulateAction={simulateAction} trades={[]} />);
 
     const lignes = within(screen.getByRole("list", { name: "Historique" })).getAllByRole("listitem");
     expect(lignes[1].textContent).toContain("E-mail 1 envoyé");
@@ -66,8 +67,24 @@ describe("présentation · LeadSheet (lot 2)", () => {
     expect(screen.getByRole("button", { name: "Envoyer l'e-mail 2" })).toBeDefined();
   });
 
+  // Lot 4 : la simulation d'actions n'est proposée qu'après un e-mail envoyé, et pas pour un lead gagné.
+  it("propose de simuler une action seulement après un e-mail envoyé, et pas pour un lead gagné", () => {
+    const { unmount } = render(<LeadSheet result={detail} action={action} sendAction={sendAction} simulateAction={simulateAction} trades={[]} />);
+    expect(screen.getByRole("button", { name: "E-mail ouvert" })).toBeDefined();
+    unmount();
+
+    const sansEmail = { ...detail, sequence: { ...detail.sequence, sent: 0, next: 1 } } as typeof detail;
+    const { unmount: fermer } = render(<LeadSheet result={sansEmail} action={action} sendAction={sendAction} simulateAction={simulateAction} trades={[]} />);
+    expect(screen.queryByRole("button", { name: "E-mail ouvert" })).toBeNull();
+    fermer();
+
+    const gagne = { ...detail, lead: { ...(detail.ok ? detail.lead : ({} as never)), stage: "gagne" as const } } as typeof detail;
+    render(<LeadSheet result={gagne} action={action} sendAction={sendAction} simulateAction={simulateAction} trades={[]} />);
+    expect(screen.queryByRole("button", { name: "E-mail ouvert" })).toBeNull();
+  });
+
   it("affiche le message reçu quand la fiche ne peut pas être montrée (lead inconnu, base en panne)", () => {
-    render(<LeadSheet result={{ ok: false, message: "Ce lead n'existe pas ou plus." }} action={action} sendAction={sendAction} trades={[]} />);
+    render(<LeadSheet result={{ ok: false, message: "Ce lead n'existe pas ou plus." }} action={action} sendAction={sendAction} simulateAction={simulateAction} trades={[]} />);
 
     expect(screen.getByText("Ce lead n'existe pas ou plus.")).toBeDefined();
     expect(screen.queryByLabelText("Nom")).toBeNull();
@@ -76,7 +93,7 @@ describe("présentation · LeadSheet (lot 2)", () => {
   // Revue PR #9 : fermer remplace l'adresse (Retour ne rouvre pas la fiche) et le panneau se ferme sans attendre le serveur.
   it("se ferme tout de suite et remplace l'adresse par le tableau", async () => {
     replace.mockReset();
-    render(<LeadSheet result={detail} action={action} sendAction={sendAction} trades={[]} />);
+    render(<LeadSheet result={detail} action={action} sendAction={sendAction} simulateAction={simulateAction} trades={[]} />);
 
     fireEvent.click(screen.getByRole("button", { name: "Fermer" }));
 

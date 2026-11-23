@@ -1,5 +1,16 @@
 import { describe, expect, it } from "vitest";
-import { eventLabel, groupByStage, normalizeFrenchPhone, sortHistory, STAGES, type Lead, type LeadEvent } from "./lead";
+import {
+  actionTargetStage,
+  advanceStage,
+  eventLabel,
+  groupByStage,
+  isHot,
+  normalizeFrenchPhone,
+  sortHistory,
+  STAGES,
+  type Lead,
+  type LeadEvent,
+} from "./lead";
 
 const lead = (over: Partial<Lead>): Lead => ({
   id: "1",
@@ -93,5 +104,50 @@ describe("domaine · lead · eventLabel", () => {
     const at = new Date("2026-11-23T09:00:00.000Z");
     expect(eventLabel({ id: "a", leadId: "l", type: "lead_cree", occurredAt: at })).toBe("Lead créé");
     expect(eventLabel({ id: "b", leadId: "l", type: "email_envoye", emailStep: 1, occurredAt: at })).toBe("E-mail 1 envoyé");
+  });
+});
+
+describe("domaine · lead · actions du destinataire (lot 4)", () => {
+  it("fait viser à chaque action son étape ; « RDV pris » vise « Gagné »", () => {
+    expect(actionTargetStage("email_ouvert")).toBe("ouvert");
+    expect(actionTargetStage("lien_clique")).toBe("lien_clique");
+    expect(actionTargetStage("page_visitee")).toBe("page_visitee");
+    expect(actionTargetStage("rdv_pris")).toBe("gagne");
+  });
+
+  // Critères 1 et 2 (lot 4) : le lead n'avance que vers l'avant.
+  it("fait avancer le lead, jamais reculer", () => {
+    expect(advanceStage("email_envoye", "ouvert")).toBe("ouvert");
+    expect(advanceStage("page_visitee", "ouvert")).toBe("page_visitee");
+    expect(advanceStage("nouveau", "lien_clique")).toBe("lien_clique");
+  });
+
+  // Critère 3 (lot 4) : « RDV pris » fait passer dans « Gagné ».
+  it("fait passer dans « Gagné » sur un RDV pris, et un lead gagné le reste", () => {
+    expect(advanceStage("ouvert", "gagne")).toBe("gagne");
+    expect(advanceStage("gagne", "ouvert")).toBe("gagne");
+  });
+
+  it("fait revenir un lead perdu à l'étape de son action", () => {
+    expect(advanceStage("perdu", "ouvert")).toBe("ouvert");
+    expect(advanceStage("perdu", "gagne")).toBe("gagne");
+  });
+
+  it("nomme les actions dans l'historique", () => {
+    const at = new Date("2026-11-23T09:00:00.000Z");
+    const label = (type: LeadEvent["type"]) => eventLabel({ id: "x", leadId: "l", type, occurredAt: at });
+    expect(label("email_ouvert")).toBe("E-mail ouvert");
+    expect(label("lien_clique")).toBe("Lien cliqué");
+    expect(label("page_visitee")).toBe("Page visitée");
+    expect(label("rdv_pris")).toBe("RDV pris");
+  });
+
+  // Critère 4 (lot 4) : chaud = une action dans les 48 dernières heures.
+  it("dit qu'un lead est chaud s'il a agi dans les 48 dernières heures", () => {
+    const now = new Date("2026-11-23T12:00:00.000Z");
+    expect(isHot(new Date("2026-11-21T12:00:01.000Z"), now)).toBe(true);
+    expect(isHot(new Date("2026-11-21T12:00:00.000Z"), now)).toBe(false);
+    expect(isHot(new Date("2026-11-20T12:00:00.000Z"), now)).toBe(false);
+    expect(isHot(null, now)).toBe(false);
   });
 });

@@ -373,3 +373,33 @@ describe("service · lead.service · updateLead (lot 2)", () => {
     });
   });
 });
+
+describe("service · lead.service · getBoard · lead chaud (lot 4)", () => {
+  // Critère 4 (lot 4) : une action dans les 48 dernières heures → chaud ; sinon non.
+  it("marque chaud un lead qui a agi dans les 48 dernières heures, selon l'horloge", async () => {
+    const jeanne = { ...karim, id: "lead-j", name: "Jeanne" };
+    const paul = { ...karim, id: "lead-p", name: "Paul" };
+    const { repository } = createFakeLeadRepository(
+      [karim, jeanne, paul],
+      [
+        { id: "a", leadId: "lead-k", type: "lien_clique", occurredAt: new Date("2026-11-22T10:00:00.000Z") },
+        { id: "b", leadId: "lead-j", type: "email_ouvert", occurredAt: new Date("2026-11-20T10:00:00.000Z") },
+        { id: "c", leadId: "lead-p", type: "email_envoye", emailStep: 1, occurredAt: new Date("2026-11-23T08:00:00.000Z") },
+      ],
+    );
+    const service = createLeadService({
+      repository,
+      clock: createFakeClock("2026-11-23T09:00:00.000Z"),
+      ids: createFakeIds(),
+      settings: createFakeSettingsRepository().repository,
+    });
+
+    const leads = (await service.getBoard()).flatMap((column) => column.leads);
+
+    expect(Object.fromEntries(leads.map((lead) => [lead.name, lead.hot]))).toEqual({
+      "Karim Benali": true,
+      Jeanne: false,
+      Paul: false,
+    });
+  });
+});

@@ -33,9 +33,14 @@ export interface LeadRepository {
   // Écrit les 7 champs de la fiche. Renvoie false si aucun lead n'a cet identifiant.
   updateDetails(id: string, details: LeadDetails): Promise<boolean>;
   listEvents(leadId: string): Promise<LeadEvent[]>;
-  // Écrit l'événement d'envoi et, s'il y en a un, le changement d'étape, ensemble (tout ou rien).
+  // Écrit un événement (envoi d'e-mail, action du destinataire) et, s'il y en a un, le changement d'étape,
+  // ensemble (tout ou rien).
   // L'étape ne change que si le lead est encore à « from » : une avancée faite entre-temps n'est pas écrasée.
-  recordEmailSent(event: LeadEvent, stageChange: { from: Stage; to: Stage } | null): Promise<void>;
+  recordEvent(event: LeadEvent, stageChange: { from: Stage; to: Stage } | null): Promise<void>;
+  // L'événement reçu avec cet identifiant d'expéditeur, s'il existe (dédoublonnage des webhooks).
+  findEventByExternalId(externalId: string): Promise<LeadEvent | null>;
+  // Pour chaque lead, la date de son dernier événement parmi ces types.
+  lastEventDates(types: readonly LeadEventType[]): Promise<Record<string, Date>>;
 }
 
 // Réglages de l'app : seulement ce qui a été enregistré (les valeurs par défaut sont dans le domaine).

@@ -3,7 +3,7 @@
 // Présentation · actions sur un lead (ajout, modification). Passent par le service (via la composition), jamais par la base.
 
 import { refresh } from "next/cache";
-import { getLeadService, getSequenceService } from "@/composition";
+import { getLeadService, getSequenceService, getSimulationService } from "@/composition";
 import type { LeadField, LeadFieldErrors, LeadInput, SaveLeadResult } from "@/services/lead.service";
 
 export type LeadFormState =
@@ -40,6 +40,17 @@ export async function updateLeadAction(_previous: LeadFormState, formData: FormD
 // Envoie l'e-mail suivant de la séquence ; en cas de succès, la fiche et la carte sont redessinées.
 export async function sendNextEmailAction(_previous: SequenceState, formData: FormData): Promise<SequenceState> {
   const result = await getSequenceService().sendNextEmail(String(formData.get("leadId") ?? ""));
+  if (!result.ok) return { ok: false, message: result.message };
+  refresh();
+  return { ok: true };
+}
+
+// Simule une action du destinataire (même chemin qu'un vrai webhook signé) ; en cas de succès, tout est redessiné.
+export async function simulateActionAction(_previous: SequenceState, formData: FormData): Promise<SequenceState> {
+  const result = await getSimulationService().simulateAction(
+    String(formData.get("leadId") ?? ""),
+    String(formData.get("type") ?? ""),
+  );
   if (!result.ok) return { ok: false, message: result.message };
   refresh();
   return { ok: true };
