@@ -10,7 +10,20 @@ const LOCAL_URL = `file:${LOCAL_DIR}/crm-btp.db`;
 // La table schema_migrations retient combien ont déjà été appliquées
 // (pas PRAGMA user_version : Turso Cloud refuse de l'écrire).
 const migrations: string[] = [
-  // La table des leads arrive au lot 1.
+  // Lot 1 : les leads. Dates en ISO 8601 (UTC), champs facultatifs à NULL.
+  `CREATE TABLE leads (
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL,
+    company TEXT,
+    trade TEXT,
+    city TEXT,
+    email TEXT NOT NULL,
+    phone TEXT,
+    stage TEXT NOT NULL DEFAULT 'nouveau',
+    created_at TEXT NOT NULL
+  )`,
+  // Lot 1 (ajout) : le code postal, facultatif.
+  `ALTER TABLE leads ADD COLUMN postal_code TEXT`,
 ];
 
 async function appliedVersion(client: Client): Promise<number | null> {

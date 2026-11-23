@@ -3,10 +3,16 @@
 
 import "server-only";
 import { getDatabase } from "@/data/db";
-import { createExampleRepository } from "@/data/example.repository";
+import { createLeadRepository } from "@/data/lead.repository";
+import { randomIds } from "@/data/random-id";
 import { systemClock } from "@/data/system-clock";
-import { createExampleService } from "@/services/example.service";
+import { createLeadService, getSuggestedTrades } from "@/services/lead.service";
 
-export function getExampleService() {
-  return createExampleService({ repository: createExampleRepository(getDatabase()), clock: systemClock });
+export function getLeadService() {
+  return createLeadService({ repository: createLeadRepository(getDatabase()), clock: systemClock, ids: randomIds });
+}
+
+// Options du formulaire de lead : n'ouvre pas la base (utilisable dans l'en-tête de la page, prérendu).
+export function getLeadFormOptions() {
+  return { trades: getSuggestedTrades() };
 }

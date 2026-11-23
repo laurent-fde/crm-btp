@@ -8,7 +8,7 @@ Points qu'`INTENT.md` ne précise pas, tranchés au découpage :
 - **Lead « chaud »** : une action (ouvert, cliqué, page visitée) dans les 48 dernières heures, selon l'horloge de l'app.
 
 ## Lot 1 · Ajouter un lead et le voir dans « Nouveau »
-**Parcours** : j'ouvre l'app et je vois le tableau avec ses 7 colonnes d'étape. Je clique sur « Ajouter un lead » et je remplis nom, entreprise, métier, ville, e-mail et téléphone. Le lead apparaît dans la colonne « Nouveau ».
+**Parcours** : j'ouvre l'app et je vois le tableau avec ses 7 colonnes d'étape. Je clique sur « Ajouter un lead » et je remplis nom, entreprise, métier, code postal, ville, e-mail et téléphone. Le lead apparaît dans la colonne « Nouveau ».
 - [ ] Étant donné le tableau vide, quand j'ajoute un lead valide, alors il apparaît dans la colonne « Nouveau ».
 - [ ] Étant donné le formulaire, quand je valide sans nom, alors le lead est refusé avec « Le nom est obligatoire », relié au champ.
 - [ ] Étant donné le formulaire, quand je saisis un e-mail invalide, alors le lead est refusé avec un message sur le champ e-mail.
@@ -16,7 +16,7 @@ Points qu'`INTENT.md` ne précise pas, tranchés au découpage :
 
 ## Lot 2 · Ouvrir la fiche d'un lead, la modifier et voir son historique
 **Parcours** : je clique sur une carte et la fiche du lead s'ouvre avec toutes ses infos et son historique (quoi, quand). Je modifie un champ et j'enregistre.
-- [ ] Étant donné un lead, quand j'ouvre sa fiche, alors je vois ses 6 champs et son historique, qui commence par « Lead créé » avec la date.
+- [ ] Étant donné un lead, quand j'ouvre sa fiche, alors je vois ses 7 champs et son historique, qui commence par « Lead créé » avec la date.
 - [ ] Étant donné une fiche, quand je change la ville et que j'enregistre, alors la carte et la fiche montrent la nouvelle ville, y compris après redémarrage.
 - [ ] Étant donné une fiche, quand j'efface le nom et que j'enregistre, alors la modification est refusée avec le même message qu'à l'ajout.
 
