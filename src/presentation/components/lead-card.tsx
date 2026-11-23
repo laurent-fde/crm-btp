@@ -5,7 +5,9 @@ import { Card, CardDescription, CardHeader, CardTitle } from "@/presentation/com
 
 // Une carte du tableau : le nom, puis entreprise · métier · code postal et ville (seulement ce qui est rempli).
 // Un clic ouvre la fiche (?lead=<id>), sans remonter en haut de la page.
-export function LeadCard({ lead }: { lead: BoardLead }) {
+// Dans « E-mail envoyé », la carte dit où le lead en est dans la séquence (« E-mail 2/3 »).
+export function LeadCard({ lead, sequenceLength }: { lead: BoardLead; sequenceLength?: number }) {
+  const step = lead.stage === "email_envoye" && sequenceLength && lead.emailStep ? `E-mail ${lead.emailStep}/${sequenceLength}` : null;
   const place = [lead.postalCode, lead.city].filter(Boolean).join(" ");
   const details = [lead.company, lead.trade, place].filter(Boolean).join(" · ");
 
@@ -22,6 +24,11 @@ export function LeadCard({ lead }: { lead: BoardLead }) {
             {lead.hot && <Badge className="bg-hot text-hot-foreground">Chaud</Badge>}
           </div>
           {details && <CardDescription className="text-xs">{details}</CardDescription>}
+          {step && (
+            <Badge variant="outline" className="w-fit font-mono text-stage-envoye">
+              {step}
+            </Badge>
+          )}
         </CardHeader>
       </Card>
     </Link>

@@ -257,6 +257,34 @@ describe("données · lead.repository", () => {
     });
   });
 
+  // Stats du tableau : le nombre d'e-mails envoyés à chaque lead (les autres événements ne comptent pas).
+  it("compte les e-mails envoyés à chaque lead", async () => {
+    const repository = createLeadRepository(open(":memory:"));
+    const paul = { ...karim, id: "lead-2", email: "paul@exemple.fr" };
+    await repository.insert(karim, created(karim));
+    await repository.insert(paul, created(paul));
+    const at = new Date("2026-11-23T09:00:00.000Z");
+    await repository.recordEvent({ id: "m1", leadId: "lead-1", type: "email_envoye", emailStep: 1, occurredAt: at }, null);
+    await repository.recordEvent({ id: "m2", leadId: "lead-1", type: "email_envoye", emailStep: 2, occurredAt: at }, null);
+    await repository.recordEvent({ id: "o1", leadId: "lead-1", type: "email_ouvert", occurredAt: at }, null);
+
+    expect(await repository.emailCounts()).toEqual({ "lead-1": 2 });
+  });
+
+  // Revue #21 : le comptage suit les étapes distinctes, comme la fiche (sequenceStatus).
+  it("compte les étapes d'e-mail distinctes", async () => {
+    const db = open(":memory:");
+    const repository = createLeadRepository(db);
+    await repository.insert(karim, created(karim));
+    await db.ready;
+    await db.client.execute("DROP INDEX lead_events_email_step");
+    const at = new Date("2026-11-23T09:00:00.000Z");
+    await repository.recordEvent({ id: "m1", leadId: "lead-1", type: "email_envoye", emailStep: 1, occurredAt: at }, null);
+    await repository.recordEvent({ id: "m1b", leadId: "lead-1", type: "email_envoye", emailStep: 1, occurredAt: at }, null);
+
+    expect(await repository.emailCounts()).toEqual({ "lead-1": 1 });
+  });
+
   // Lot 6 : passer dans « Perdu ». L'événement n'est écrit que si l'étape change vraiment.
   describe("recordStageChange", () => {
     const perdu: LeadEvent = { id: "perdu-1", leadId: "lead-1", type: "lead_perdu", occurredAt: new Date("2026-11-30T09:00:00.000Z") };

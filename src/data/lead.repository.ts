@@ -132,6 +132,15 @@ export function createLeadRepository(db: Database): LeadRepository {
       return Object.fromEntries(rows.map((row) => [String(row.lead_id), new Date(String(row.last))]));
     },
 
+    async emailCounts() {
+      await db.ready;
+      const { rows } = await db.client.execute({
+        sql: "SELECT lead_id, COUNT(DISTINCT email_step) AS n FROM lead_events WHERE type = ? GROUP BY lead_id",
+        args: ["email_envoye"],
+      });
+      return Object.fromEntries(rows.map((row) => [String(row.lead_id), Number(row.n)]));
+    },
+
     async recordEvent(event, stageChange) {
       await db.ready;
       // Une seule transaction. L'étape ne change que si le lead est encore à « from ».

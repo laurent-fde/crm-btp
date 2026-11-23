@@ -79,4 +79,27 @@ describe("présentation · KanbanBoard", () => {
 
     expect(within(screen.getByRole("region", { name: /^Nouveau/ })).getByText("Aucun lead")).toBeDefined();
   });
+
+  // Stats : la colonne « E-mail envoyé » détaille où en sont ses leads, et chaque carte dit son e-mail.
+  it("détaille la colonne E-mail envoyé par e-mail, et la carte porte « E-mail N/longueur »", () => {
+    const lea = { ...karim, id: "lead-2", name: "Léa Fontaine", stage: "email_envoye" as const, emailStep: 2 };
+    render(
+      <KanbanBoard
+        columns={groupByStage([lea, { ...karim, emailStep: 0 }])}
+        sequence={[
+          { step: 1, count: 0 },
+          { step: 2, count: 1 },
+          { step: 3, count: 0 },
+        ]}
+        sequenceLength={3}
+      />,
+    );
+
+    const envoye = within(screen.getByRole("region", { name: /^E-mail envoyé/ }));
+    // La colonne ne montre que les e-mails qui ont des leads.
+    expect(envoye.getAllByRole("listitem").map((li) => li.textContent).filter((t) => t?.startsWith("E-mail"))).toEqual(["E-mail 2 : 1"]);
+    expect(envoye.getByRole("link", { name: /Léa Fontaine/ }).textContent).toContain("E-mail 2/3");
+    expect(screen.getByRole("link", { name: /Karim Benali/ }).textContent).not.toContain("E-mail");
+  });
 });
+

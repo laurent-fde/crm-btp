@@ -58,6 +58,8 @@ export const MIGRATIONS: readonly string[] = [
   `CREATE UNIQUE INDEX lead_events_external_id ON lead_events (external_id) WHERE external_id IS NOT NULL`,
   // Lot 6 (revue #14) : l'heure de réception d'une action, à l'horloge de l'app (simulée ou non).
   `ALTER TABLE lead_events ADD COLUMN received_at TEXT`,
+  // Stats du tableau (revue #21) : compter les événements d'un type par lead sans relire toute la table.
+  `CREATE INDEX lead_events_type_lead ON lead_events (type, lead_id)`,
 ];
 
 async function appliedVersion(client: Client): Promise<number | null> {

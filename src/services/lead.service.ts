@@ -12,6 +12,7 @@ import {
   type Lead,
   type LeadEventType,
 } from "./domain/lead";
+import { boardStats, sequenceStep, type BoardStats } from "./domain/board-stats";
 import { sequenceStatus, type SequenceStatus } from "./domain/sequence";
 import { withDefaults } from "./domain/settings";
 import { leadSchema } from "./lead.schema";
@@ -39,6 +40,9 @@ export type UpdateLeadResult = SaveLeadResult;
 export type LeadHistoryItem = { id: string; type: LeadEventType; label: string; occurredAt: Date };
 export type LeadDetail = { lead: Lead; history: LeadHistoryItem[]; sequence: SequenceStatus };
 export type LeadDetailResult = ({ ok: true } & LeadDetail) | { ok: false; message: string };
+
+// Le tableau : les colonnes, leurs statistiques, et la longueur de la séquence (pour « E-mail N/longueur »).
+export type Board = { columns: BoardColumn[]; stats: BoardStats; sequenceLength: number };
 
 export type LeadServiceDeps = {
   repository: LeadRepository;
@@ -122,10 +126,19 @@ export function createLeadService({ repository, clock, ids, settings }: LeadServ
       }
     },
 
-    async getBoard(): Promise<BoardColumn[]> {
-      const [leads, lastActions] = await Promise.all([repository.findAll(), repository.lastEventDates(HOT_ACTION_TYPES)]);
+    async getBoard(): Promise<Board> {
+      const [leads, lastActions, emails, saved] = await Promise.all([
+        repository.findAll(),
+        repository.lastEventDates(HOT_ACTION_TYPES),
+        repository.emailCounts(),
+        settings.load(),
+      ]);
       const now = clock.now();
-      return groupByStage(leads.map((lead) => ({ ...lead, hot: isHot(lastActions[lead.id] ?? null, now) })));
+      const { sequenceLength } = withDefaults(saved);
+      const columns = groupByStage(
+        leads.map((lead) => ({ ...lead, hot: isHot(lastActions[lead.id] ?? null, now), emailStep: sequenceStep(emails[lead.id] ?? 0, sequenceLength) })),
+      );
+      return { columns, stats: boardStats(columns, sequenceLength), sequenceLength };
     },
   };
 }

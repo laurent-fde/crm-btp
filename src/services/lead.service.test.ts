@@ -41,7 +41,7 @@ describe("service · lead.service · addLead", () => {
       },
     });
     expect(leads).toHaveLength(1);
-    const board = await service.getBoard();
+    const { columns: board } = await service.getBoard();
     expect(board.find((c) => c.stage === "nouveau")?.leads.map((l) => l.name)).toEqual(["Karim Benali"]);
   });
 
@@ -394,7 +394,7 @@ describe("service · lead.service · getBoard · lead chaud (lot 4)", () => {
       settings: createFakeSettingsRepository().repository,
     });
 
-    const leads = (await service.getBoard()).flatMap((column) => column.leads);
+    const leads = (await service.getBoard()).columns.flatMap((column) => column.leads);
 
     expect(Object.fromEntries(leads.map((lead) => [lead.name, lead.hot]))).toEqual({
       "Karim Benali": true,
@@ -412,7 +412,40 @@ describe("service · lead.service · getBoard · lead chaud (lot 4)", () => {
     const board = (iso: string) =>
       createLeadService({ repository, clock: createFakeClock(iso), ids: createFakeIds(), settings: createFakeSettingsRepository().repository }).getBoard();
 
-    expect((await board("2026-11-23T10:00:00.000Z")).flatMap((c) => c.leads)[0].hot).toBe(true);
-    expect((await board("2026-11-26T09:00:00.000Z")).flatMap((c) => c.leads)[0].hot).toBe(false);
+    expect((await board("2026-11-23T10:00:00.000Z")).columns.flatMap((c) => c.leads)[0].hot).toBe(true);
+    expect((await board("2026-11-26T09:00:00.000Z")).columns.flatMap((c) => c.leads)[0].hot).toBe(false);
   });
 });
+
+describe("service · lead.service · getBoard · statistiques", () => {
+  it("donne à chaque lead son nombre d'e-mails reçus, et les stats selon la séquence réglée", async () => {
+    const lea = { ...karim, id: "lead-l", name: "Léa", stage: "email_envoye" as const };
+    const { repository } = createFakeLeadRepository(
+      [karim, lea],
+      [
+        { id: "e1", leadId: "lead-l", type: "email_envoye", emailStep: 1, occurredAt: new Date("2026-11-20T08:00:00.000Z") },
+        { id: "e2", leadId: "lead-l", type: "email_envoye", emailStep: 2, occurredAt: new Date("2026-11-21T08:00:00.000Z") },
+      ],
+    );
+    const service = createLeadService({
+      repository,
+      clock: createFakeClock("2026-11-23T09:00:00.000Z"),
+      ids: createFakeIds(),
+      settings: createFakeSettingsRepository({ sequenceLength: 4 }).repository,
+    });
+
+    const board = await service.getBoard();
+
+    const leads = Object.fromEntries(board.columns.flatMap((c) => c.leads).map((l) => [l.name, l.emailStep]));
+    expect(leads).toEqual({ "Karim Benali": 0, Léa: 2 });
+    expect(board.sequenceLength).toBe(4);
+    expect(board.stats.total).toBe(2);
+    expect(board.stats.sequence).toEqual([
+      { step: 1, count: 0 },
+      { step: 2, count: 1 },
+      { step: 3, count: 0 },
+      { step: 4, count: 0 },
+    ]);
+  });
+});
+
