@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { groupByStage, normalizeFrenchPhone, sortHistory, STAGES, type Lead, type LeadEvent } from "./lead";
+import { eventLabel, groupByStage, normalizeFrenchPhone, sortHistory, STAGES, type Lead, type LeadEvent } from "./lead";
 
 const lead = (over: Partial<Lead>): Lead => ({
   id: "1",
@@ -84,5 +84,14 @@ describe("domaine · lead · sortHistory", () => {
 
     expect(sortHistory(recu).map((e) => e.id)).toEqual(["a", "b"]);
     expect(recu.map((e) => e.id)).toEqual(["b", "a"]);
+  });
+});
+
+describe("domaine · lead · eventLabel", () => {
+  // Critère 1 (lot 3) : l'historique montre « E-mail 1 envoyé ».
+  it("nomme chaque événement de l'historique", () => {
+    const at = new Date("2026-11-23T09:00:00.000Z");
+    expect(eventLabel({ id: "a", leadId: "l", type: "lead_cree", occurredAt: at })).toBe("Lead créé");
+    expect(eventLabel({ id: "b", leadId: "l", type: "email_envoye", emailStep: 1, occurredAt: at })).toBe("E-mail 1 envoyé");
   });
 });

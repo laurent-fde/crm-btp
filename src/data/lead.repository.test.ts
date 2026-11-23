@@ -156,4 +156,57 @@ describe("données · lead.repository", () => {
       }),
     ).toBe(false);
   });
+
+  const email1: LeadEvent = {
+    id: "email-1",
+    leadId: "lead-1",
+    type: "email_envoye",
+    emailStep: 1,
+    occurredAt: new Date("2026-11-24T09:00:00.000Z"),
+  };
+
+  // Critère 1 (lot 3) : l'événement « E-mail 1 envoyé » et le passage dans « E-mail envoyé » sont écrits ensemble.
+  it("écrit l'envoi et le changement d'étape ensemble, puis relit l'événement avec son numéro", async () => {
+    const repository = createLeadRepository(open(":memory:"));
+    await repository.insert(karim, created(karim));
+
+    await repository.recordEmailSent(email1, { from: "nouveau", to: "email_envoye" });
+
+    expect((await repository.findById("lead-1"))?.stage).toBe("email_envoye");
+    expect(await repository.listEvents("lead-1")).toEqual([created(karim), email1]);
+  });
+
+  // Revue PR #10 : la mention « dernier e-mail » est gardée dans l'historique.
+  it("garde la mention « dernier e-mail » de l'envoi", async () => {
+    const repository = createLeadRepository(open(":memory:"));
+    await repository.insert(karim, created(karim));
+    const dernier: LeadEvent = { ...email1, emailFinal: true };
+
+    await repository.recordEmailSent(dernier, null);
+
+    expect((await repository.listEvents("lead-1")).at(-1)).toEqual(dernier);
+  });
+
+  it("ne change pas l'étape si le lead a avancé entre-temps", async () => {
+    const repository = createLeadRepository(open(":memory:"));
+    await repository.insert({ ...karim, stage: "ouvert" }, created(karim));
+
+    await repository.recordEmailSent(email1, { from: "nouveau", to: "email_envoye" });
+
+    expect((await repository.findById("lead-1"))?.stage).toBe("ouvert");
+    expect(await repository.listEvents("lead-1")).toHaveLength(2);
+  });
+
+  it("refuse d'enregistrer deux fois le même e-mail de la séquence, sans rien écrire", async () => {
+    const repository = createLeadRepository(open(":memory:"));
+    await repository.insert(karim, created(karim));
+    await repository.recordEmailSent(email1, null);
+
+    await expect(
+      repository.recordEmailSent({ ...email1, id: "email-1-bis" }, { from: "nouveau", to: "email_envoye" }),
+    ).rejects.toThrow();
+
+    expect(await repository.listEvents("lead-1")).toHaveLength(2);
+    expect((await repository.findById("lead-1"))?.stage).toBe("nouveau");
+  });
 });

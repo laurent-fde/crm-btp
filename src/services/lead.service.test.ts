@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
 import { createLeadService, getSuggestedTrades } from "./lead.service";
-import { createFakeClock, createFakeIds, createFakeLeadRepository } from "./testing/fakes";
+import { createFakeClock, createFakeIds, createFakeLeadRepository, createFakeSettingsRepository } from "./testing/fakes";
 
 function setup() {
   const fake = createFakeLeadRepository();
-  const service = createLeadService({ repository: fake.repository, clock: createFakeClock(), ids: createFakeIds() });
+  const service = createLeadService({ repository: fake.repository, clock: createFakeClock(), ids: createFakeIds(), settings: createFakeSettingsRepository().repository });
   return { ...fake, service };
 }
 
@@ -121,7 +121,7 @@ describe("service · lead.service · addLead", () => {
     repository.insert = async () => {
       throw new Error("base injoignable");
     };
-    const service = createLeadService({ repository, clock: createFakeClock(), ids: createFakeIds() });
+    const service = createLeadService({ repository, clock: createFakeClock(), ids: createFakeIds(), settings: createFakeSettingsRepository().repository });
 
     const result = await service.addLead({ name: "Karim", email: "karim@exemple.fr" });
 
@@ -193,10 +193,60 @@ describe("service · lead.service · historique (lot 2)", () => {
         { id: "e1", leadId: "lead-k", type: "lead_cree", occurredAt: new Date("2026-11-20T08:00:00.000Z") },
       ],
     );
-    const service = createLeadService({ repository, clock: createFakeClock(), ids: createFakeIds() });
+    const service = createLeadService({ repository, clock: createFakeClock(), ids: createFakeIds(), settings: createFakeSettingsRepository().repository });
 
     const detail = await service.getLeadDetail("lead-k");
     expect(detail.ok && detail.history.map((h) => h.id)).toEqual(["e1", "e2"]);
+  });
+
+  // Lot 3 : la fiche dit où en est la séquence.
+  it("indique où en est la séquence d'e-mails", async () => {
+    const { repository } = createFakeLeadRepository(
+      [karim],
+      [
+        { id: "e0", leadId: "lead-k", type: "lead_cree", occurredAt: new Date("2026-11-20T08:00:00.000Z") },
+        { id: "e1", leadId: "lead-k", type: "email_envoye", emailStep: 1, occurredAt: new Date("2026-11-21T08:00:00.000Z") },
+      ],
+    );
+    const service = createLeadService({ repository, clock: createFakeClock(), ids: createFakeIds(), settings: createFakeSettingsRepository().repository });
+
+    const detail = await service.getLeadDetail("lead-k");
+
+    expect(detail.ok && detail.sequence).toEqual({ sent: 1, total: 3, next: 2, blockedReason: null });
+    expect(detail.ok && detail.history.map((h) => h.label)).toEqual(["Lead créé", "E-mail 1 envoyé"]);
+  });
+
+  // Critère 5 (lot 3) : séquence réglée à 5, lead qui a reçu les 3 premiers : la fiche propose l'e-mail 4.
+  it("propose l'e-mail 4 à l'ouverture de la fiche quand la séquence est réglée à 5 et que 3 sont partis", async () => {
+    const at = (d: number) => new Date(`2026-11-2${d}T08:00:00.000Z`);
+    const { repository } = createFakeLeadRepository(
+      [{ ...karim, stage: "email_envoye" }],
+      [1, 2, 3].map((step) => ({ id: `s${step}`, leadId: "lead-k", type: "email_envoye" as const, emailStep: step, occurredAt: at(step) })),
+    );
+    const service = createLeadService({
+      repository,
+      clock: createFakeClock(),
+      ids: createFakeIds(),
+      settings: createFakeSettingsRepository({ sequenceLength: 5 }).repository,
+    });
+
+    const detail = await service.getLeadDetail("lead-k");
+
+    expect(detail.ok && detail.sequence).toEqual({ sent: 3, total: 5, next: 4, blockedReason: null });
+  });
+
+  it("calcule la séquence avec la longueur réglée", async () => {
+    const { repository } = createFakeLeadRepository([karim]);
+    const service = createLeadService({
+      repository,
+      clock: createFakeClock(),
+      ids: createFakeIds(),
+      settings: createFakeSettingsRepository({ sequenceLength: 5 }).repository,
+    });
+
+    const detail = await service.getLeadDetail("lead-k");
+
+    expect(detail.ok && detail.sequence).toEqual({ sent: 0, total: 5, next: 1, blockedReason: null });
   });
 
   it("ne renvoie rien pour un lead inconnu", async () => {
@@ -211,7 +261,7 @@ describe("service · lead.service · historique (lot 2)", () => {
     repository.findById = async () => {
       throw new Error("base injoignable");
     };
-    const service = createLeadService({ repository, clock: createFakeClock(), ids: createFakeIds() });
+    const service = createLeadService({ repository, clock: createFakeClock(), ids: createFakeIds(), settings: createFakeSettingsRepository().repository });
 
     expect(await service.getLeadDetail("lead-k")).toEqual({
       ok: false,
@@ -223,7 +273,7 @@ describe("service · lead.service · historique (lot 2)", () => {
 describe("service · lead.service · updateLead (lot 2)", () => {
   function setupWithKarim() {
     const fake = createFakeLeadRepository([karim]);
-    const service = createLeadService({ repository: fake.repository, clock: createFakeClock(), ids: createFakeIds() });
+    const service = createLeadService({ repository: fake.repository, clock: createFakeClock(), ids: createFakeIds(), settings: createFakeSettingsRepository().repository });
     return { ...fake, service };
   }
   // La saisie du formulaire de la fiche : les 7 champs, en texte.
@@ -314,7 +364,7 @@ describe("service · lead.service · updateLead (lot 2)", () => {
     repository.updateDetails = async () => {
       throw new Error("base injoignable");
     };
-    const service = createLeadService({ repository, clock: createFakeClock(), ids: createFakeIds() });
+    const service = createLeadService({ repository, clock: createFakeClock(), ids: createFakeIds(), settings: createFakeSettingsRepository().repository });
 
     expect(await service.updateLead("lead-k", saisie)).toEqual({
       ok: false,

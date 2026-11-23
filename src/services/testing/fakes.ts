@@ -1,6 +1,6 @@
 // Faux ports pour les tests du service : aucune vraie base, une horloge et des identifiants prévisibles.
 
-import type { Clock, IdGenerator, Lead, LeadEvent, LeadRepository } from "../ports";
+import type { Clock, EmailMessage, EmailSender, IdGenerator, Lead, LeadEvent, LeadRepository, Settings, SettingsRepository } from "../ports";
 
 export function createFakeLeadRepository(initial: Lead[] = [], initialEvents: LeadEvent[] = []) {
   const leads = [...initial];
@@ -19,6 +19,11 @@ export function createFakeLeadRepository(initial: Lead[] = [], initialEvents: Le
       return true;
     },
     listEvents: async (leadId) => events.filter((event) => event.leadId === leadId),
+    recordEmailSent: async (event, stageChange) => {
+      events.push(event);
+      const lead = leads.find((l) => l.id === event.leadId);
+      if (lead && stageChange && lead.stage === stageChange.from) lead.stage = stageChange.to;
+    },
   };
   return { repository, leads, events };
 }
@@ -30,4 +35,28 @@ export function createFakeClock(iso = "2026-11-23T09:00:00.000Z"): Clock {
 export function createFakeIds(prefix = "lead"): IdGenerator {
   let n = 0;
   return { next: () => `${prefix}-${++n}` };
+}
+
+// Faux fournisseur d'e-mails : garde chaque envoi en mémoire.
+export function createFakeEmailSender() {
+  const sent: EmailMessage[] = [];
+  const sender: EmailSender = {
+    send: async (message) => {
+      sent.push(message);
+      return { messageId: `msg-${sent.length}` };
+    },
+  };
+  return { sender, sent };
+}
+
+// Faux réglages : en mémoire, vides par défaut (les valeurs par défaut s'appliquent).
+export function createFakeSettingsRepository(initial: Partial<Settings> = {}) {
+  const values: Partial<Settings> = { ...initial };
+  const repository: SettingsRepository = {
+    load: async () => ({ ...values }),
+    save: async (settings) => {
+      Object.assign(values, settings);
+    },
+  };
+  return { repository, values };
 }

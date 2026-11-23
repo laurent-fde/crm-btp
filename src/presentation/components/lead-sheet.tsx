@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import type { LeadFormState } from "@/presentation/actions/lead.action";
+import type { LeadFormState, SequenceState } from "@/presentation/actions/lead.action";
 import type { LeadDetailResult } from "@/services/lead.service";
 import {
   Sheet,
@@ -13,13 +13,21 @@ import {
 } from "@/presentation/components/ui/sheet";
 import { formatDateTime } from "./format-date";
 import { LeadForm } from "./lead-form";
+import { SequencePanel } from "./sequence-panel";
 
 type LeadAction = (previous: LeadFormState, formData: FormData) => Promise<LeadFormState>;
 
-type LeadSheetProps = { result: LeadDetailResult; action: LeadAction; trades: readonly string[] };
+type SendAction = (previous: SequenceState, formData: FormData) => Promise<SequenceState>;
+
+type LeadSheetProps = {
+  result: LeadDetailResult;
+  action: LeadAction;
+  sendAction: SendAction;
+  trades: readonly string[];
+};
 
 // La fiche d'un lead, dans un panneau latéral ouvert par l'adresse (?lead=<id>). Fermer revient au tableau.
-export function LeadSheet({ result, action, trades }: LeadSheetProps) {
+export function LeadSheet({ result, action, sendAction, trades }: LeadSheetProps) {
   const router = useRouter();
   const [open, setOpen] = useState(true);
   // Le panneau se ferme tout de suite ; l'adresse est remplacée (Retour ne rouvre pas la fiche).
@@ -50,6 +58,7 @@ export function LeadSheet({ result, action, trades }: LeadSheetProps) {
                 pendingLabel="Enregistrement…"
                 successMessage="Modifications enregistrées"
               />
+              <SequencePanel leadId={detail.lead.id} sequence={detail.sequence} action={sendAction} />
               <section aria-labelledby="fiche-historique" className="grid gap-3">
                 <h3 id="fiche-historique" className="text-base font-semibold">
                   Historique

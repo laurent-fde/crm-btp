@@ -35,6 +35,24 @@ export const MIGRATIONS: readonly string[] = [
   // Lot 2 : les leads créés avant l'historique reçoivent leur « Lead créé », à leur date de création.
   `INSERT INTO lead_events (id, lead_id, type, occurred_at)
     SELECT 'cree-' || id, id, 'lead_cree', created_at FROM leads`,
+  // Lot 3 : le numéro de l'e-mail dans la séquence, pour les événements « email_envoye ».
+  `ALTER TABLE lead_events ADD COLUMN email_step INTEGER`,
+  // Lot 3 : un même e-mail de la séquence n'est enregistré qu'une fois par lead.
+  `CREATE UNIQUE INDEX lead_events_email_step ON lead_events (lead_id, email_step) WHERE type = 'email_envoye'`,
+  // Lot 3 : la boîte d'envoi du faux fournisseur d'e-mails (rien n'est expédié).
+  `CREATE TABLE sent_emails (
+    message_id TEXT PRIMARY KEY,
+    lead_id TEXT NOT NULL REFERENCES leads (id),
+    step INTEGER NOT NULL,
+    recipient TEXT NOT NULL,
+    subject TEXT NOT NULL,
+    body TEXT NOT NULL,
+    sent_at TEXT NOT NULL
+  )`,
+  // Lot 3 : les réglages de l'app (clé → valeur), par exemple la longueur de la séquence.
+  `CREATE TABLE settings (key TEXT PRIMARY KEY, value TEXT NOT NULL)`,
+  // Lot 3 : l'e-mail envoyé était le dernier de la séquence (1), ou non (0).
+  `ALTER TABLE lead_events ADD COLUMN email_final INTEGER`,
 ];
 
 async function appliedVersion(client: Client): Promise<number | null> {

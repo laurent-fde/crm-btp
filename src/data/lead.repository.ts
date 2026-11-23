@@ -28,8 +28,22 @@ function toEvent(row: Row): LeadEvent {
     leadId: String(row.lead_id),
     type: String(row.type) as LeadEventType,
     occurredAt: new Date(String(row.occurred_at)),
+    ...(row.email_step != null && { emailStep: Number(row.email_step) }),
+    ...(row.email_final != null && { emailFinal: Number(row.email_final) === 1 }),
   };
 }
+
+const insertEvent = (event: LeadEvent) => ({
+  sql: "INSERT INTO lead_events (id, lead_id, type, occurred_at, email_step, email_final) VALUES (?, ?, ?, ?, ?, ?)",
+  args: [
+    event.id,
+    event.leadId,
+    event.type,
+    event.occurredAt.toISOString(),
+    event.emailStep ?? null,
+    event.emailFinal === undefined ? null : event.emailFinal ? 1 : 0,
+  ],
+});
 
 export function createLeadRepository(db: Database): LeadRepository {
   return {
@@ -53,10 +67,7 @@ export function createLeadRepository(db: Database): LeadRepository {
               lead.createdAt.toISOString(),
             ],
           },
-          {
-            sql: "INSERT INTO lead_events (id, lead_id, type, occurred_at) VALUES (?, ?, ?, ?)",
-            args: [firstEvent.id, firstEvent.leadId, firstEvent.type, firstEvent.occurredAt.toISOString()],
-          },
+          insertEvent(firstEvent),
         ],
         "write",
       );
@@ -92,10 +103,23 @@ export function createLeadRepository(db: Database): LeadRepository {
     async listEvents(leadId) {
       await db.ready;
       const { rows } = await db.client.execute({
-        sql: "SELECT id, lead_id, type, occurred_at FROM lead_events WHERE lead_id = ? ORDER BY occurred_at, rowid",
+        sql: "SELECT id, lead_id, type, occurred_at, email_step, email_final FROM lead_events WHERE lead_id = ? ORDER BY occurred_at, rowid",
         args: [leadId],
       });
       return rows.map(toEvent);
+    },
+
+    async recordEmailSent(event, stageChange) {
+      await db.ready;
+      // Une seule transaction. L'étape ne change que si le lead est encore à « from ».
+      const statements = [insertEvent(event)];
+      if (stageChange) {
+        statements.push({
+          sql: "UPDATE leads SET stage = ? WHERE id = ? AND stage = ?",
+          args: [stageChange.to, event.leadId, stageChange.from],
+        });
+      }
+      await db.client.batch(statements, "write");
     },
   };
 }
