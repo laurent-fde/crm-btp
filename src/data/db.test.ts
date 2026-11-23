@@ -4,7 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { createClient, type InStatement } from "@libsql/client";
 import { afterEach, describe, expect, it } from "vitest";
-import { migrate, openDatabase, resolveDatabaseUrl, type Database } from "./db";
+import { MIGRATIONS, migrate, resolveDatabaseUrl, type Database } from "./db";
 
 describe("couche données · db (adresse de la base)", () => {
   it("utilise DATABASE_URL quand elle est remplie", () => {
@@ -40,10 +40,10 @@ describe("couche données · db (migrations)", () => {
     return `file:${join(dir, "crm-btp.db")}`;
   };
 
+  // Base vierge, sans les vraies migrations : chaque test applique sa liste d'exemple.
   const open = async (url: string) => {
-    const db = openDatabase(url);
+    const db: Database = { client: createClient({ url }), ready: Promise.resolve() };
     opened.push(db);
-    await db.ready;
     return db;
   };
 
@@ -142,6 +142,25 @@ describe("couche données · db (migrations)", () => {
     expect(Number(t.rows[0].n)).toBe(1);
     const versions = await client.execute("SELECT COUNT(*) AS n FROM schema_migrations");
     expect(Number(versions.rows[0].n)).toBe(2);
+    client.close();
+  });
+});
+
+describe("couche données · db (historique des leads, lot 2)", () => {
+  // Critère 1 (lot 2) : un lead créé avant l'historique reçoit son « Lead créé », à sa date de création.
+  it("donne un « Lead créé » aux leads déjà en base, daté de leur création", async () => {
+    const client = createClient({ url: ":memory:" });
+    await migrate(client, MIGRATIONS.slice(0, 2));
+    await client.execute(
+      "INSERT INTO leads (id, name, email, created_at) VALUES ('ancien', 'Karim', 'karim@exemple.fr', '2026-11-20T08:00:00.000Z')",
+    );
+
+    await migrate(client, MIGRATIONS);
+
+    const { rows } = await client.execute("SELECT lead_id, type, occurred_at FROM lead_events");
+    expect(rows.map((r) => ({ lead_id: r.lead_id, type: r.type, occurred_at: r.occurred_at }))).toEqual([
+      { lead_id: "ancien", type: "lead_cree", occurred_at: "2026-11-20T08:00:00.000Z" },
+    ]);
     client.close();
   });
 });

@@ -1,11 +1,12 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const addLead = vi.fn();
+const updateLead = vi.fn();
 const refresh = vi.fn();
-vi.mock("@/composition", () => ({ getLeadService: () => ({ addLead }) }));
+vi.mock("@/composition", () => ({ getLeadService: () => ({ addLead, updateLead }) }));
 vi.mock("next/cache", () => ({ refresh: () => refresh() }));
 
-import { addLeadAction } from "./lead.action";
+import { addLeadAction, updateLeadAction } from "./lead.action";
 
 function form(values: Record<string, string>) {
   const data = new FormData();
@@ -16,6 +17,7 @@ function form(values: Record<string, string>) {
 describe("présentation · lead.action · addLeadAction", () => {
   beforeEach(() => {
     addLead.mockReset();
+    updateLead.mockReset();
     refresh.mockReset();
   });
 
@@ -63,6 +65,45 @@ describe("présentation · lead.action · addLeadAction", () => {
       errors: { name: "Le nom est obligatoire" },
       values: { name: "", company: "", trade: "", city: "", postalCode: "", email: "karim@exemple.fr", phone: "" },
     });
+    expect(refresh).not.toHaveBeenCalled();
+  });
+});
+
+describe("présentation · lead.action · updateLeadAction (lot 2)", () => {
+  beforeEach(() => {
+    updateLead.mockReset();
+    refresh.mockReset();
+  });
+
+  // Critère 2 (lot 2) : la modification passe par le service, puis la carte et la fiche sont redessinées.
+  it("transmet l'identifiant et la saisie au service, puis redessine", async () => {
+    updateLead.mockResolvedValue({ ok: true, lead: { id: "lead-1" } });
+
+    const state = await updateLeadAction(
+      null,
+      form({ leadId: "lead-1", name: "Karim", email: "karim@exemple.fr", city: "Villeurbanne" }),
+    );
+
+    expect(updateLead).toHaveBeenCalledWith("lead-1", {
+      name: "Karim",
+      company: "",
+      trade: "",
+      city: "Villeurbanne",
+      postalCode: "",
+      email: "karim@exemple.fr",
+      phone: "",
+    });
+    expect(refresh).toHaveBeenCalledOnce();
+    expect(state).toEqual({ ok: true });
+  });
+
+  // Critère 3 (lot 2) : un refus renvoie l'erreur et la saisie, sans redessiner.
+  it("renvoie les erreurs et la saisie, sans redessiner", async () => {
+    updateLead.mockResolvedValue({ ok: false, errors: { name: "Le nom est obligatoire" } });
+
+    const state = await updateLeadAction(null, form({ leadId: "lead-1", name: "", email: "karim@exemple.fr" }));
+
+    expect(state).toMatchObject({ ok: false, errors: { name: "Le nom est obligatoire" }, values: { name: "" } });
     expect(refresh).not.toHaveBeenCalled();
   });
 });

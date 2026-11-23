@@ -38,6 +38,21 @@ describe("présentation · KanbanBoard", () => {
     expect(within(screen.getByRole("region", { name: /^Ouvert/ })).queryByText("Karim Benali")).toBeNull();
   });
 
+  // Critère 2 (lot 2) : après modification, la carte montre la nouvelle ville.
+  it("montre sur la carte la ville enregistrée", () => {
+    render(<KanbanBoard columns={groupByStage([{ ...karim, city: "Villeurbanne", postalCode: "69100" }])} />);
+
+    expect(screen.getByRole("link", { name: /Karim Benali/ }).textContent).toContain("69100 Villeurbanne");
+  });
+
+  // Lot 2 : la carte ouvre la fiche du lead.
+  it("fait de chaque carte un lien vers la fiche du lead", () => {
+    render(<KanbanBoard columns={groupByStage([karim])} />);
+
+    const lien = screen.getByRole("link", { name: /Karim Benali/ });
+    expect(lien.getAttribute("href")).toBe("/?lead=lead-1");
+  });
+
   it("n'affiche que les infos remplies sur la carte", () => {
     render(<KanbanBoard columns={groupByStage([{ ...karim, company: null, trade: "Plombier", city: null, postalCode: null }])} />);
 

@@ -2,7 +2,7 @@
 
 import { Plus } from "lucide-react";
 import { useCallback, useState } from "react";
-import type { AddLeadState } from "@/presentation/actions/lead.action";
+import type { LeadFormState } from "@/presentation/actions/lead.action";
 import { buttonVariants } from "@/presentation/components/ui/button";
 import {
   Dialog,
@@ -14,7 +14,7 @@ import {
 } from "@/presentation/components/ui/dialog";
 import { LeadForm } from "./lead-form";
 
-type AddAction = (previous: AddLeadState, formData: FormData) => Promise<AddLeadState>;
+type AddAction = (previous: LeadFormState, formData: FormData) => Promise<LeadFormState>;
 
 // Le formulaire d'ajout dans une fenêtre. Un ajout réussi la ferme ; un refus la garde ouverte avec les erreurs.
 export function NewLeadDialog({ action, trades }: { action: AddAction; trades: readonly string[] }) {

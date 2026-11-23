@@ -1,7 +1,15 @@
 // Service · lead : cas d'usage. Reçoit ses ports en paramètre, valide toute saisie.
 
 import { z } from "zod";
-import { groupByStage, SUGGESTED_TRADES, type BoardColumn, type Lead } from "./domain/lead";
+import {
+  EVENT_LABELS,
+  groupByStage,
+  sortHistory,
+  SUGGESTED_TRADES,
+  type BoardColumn,
+  type Lead,
+  type LeadEventType,
+} from "./domain/lead";
 import { leadSchema } from "./lead.schema";
 import type { Clock, IdGenerator, LeadRepository } from "./ports";
 
@@ -18,40 +26,89 @@ export type LeadInput = {
 
 export type LeadField = keyof LeadInput;
 export type LeadFieldErrors = Partial<Record<LeadField, string>>;
-export type AddLeadResult =
+export type SaveLeadResult =
   | { ok: true; lead: Lead }
   | { ok: false; errors: LeadFieldErrors; formError?: string };
+export type AddLeadResult = SaveLeadResult;
+export type UpdateLeadResult = SaveLeadResult;
+
+export type LeadHistoryItem = { id: string; type: LeadEventType; label: string; occurredAt: Date };
+export type LeadDetail = { lead: Lead; history: LeadHistoryItem[] };
+export type LeadDetailResult = ({ ok: true } & LeadDetail) | { ok: false; message: string };
+
+export type LeadServiceDeps = { repository: LeadRepository; clock: Clock; ids: IdGenerator };
 
 const SAVE_FAILED = "Enregistrement impossible pour le moment. Réessaie dans un instant.";
+const NOT_FOUND = "Ce lead n'existe pas ou plus.";
+const LOAD_FAILED = "Fiche indisponible pour le moment. Réessaie dans un instant.";
 
 // Métiers proposés à la saisie : aucune dépendance, utilisable sans ouvrir la base.
 export function getSuggestedTrades(): string[] {
   return [...SUGGESTED_TRADES];
 }
 
-export type LeadServiceDeps = { repository: LeadRepository; clock: Clock; ids: IdGenerator };
+type Parsed = { ok: true; data: z.output<typeof leadSchema> } | { ok: false; errors: LeadFieldErrors };
+
+// Même validation pour l'ajout et la modification : mêmes règles, mêmes messages.
+function parseLead(input: LeadInput): Parsed {
+  const parsed = leadSchema.safeParse(input);
+  if (parsed.success) return { ok: true, data: parsed.data };
+  // Le premier message de chaque champ.
+  const fieldErrors = z.flattenError(parsed.error).fieldErrors as Record<string, string[] | undefined>;
+  const errors: LeadFieldErrors = {};
+  for (const [field, messages] of Object.entries(fieldErrors)) {
+    if (messages?.[0]) errors[field as LeadField] = messages[0];
+  }
+  return { ok: false, errors };
+}
 
 export function createLeadService({ repository, clock, ids }: LeadServiceDeps) {
   return {
     async addLead(input: LeadInput): Promise<AddLeadResult> {
-      const parsed = leadSchema.safeParse(input);
-      if (!parsed.success) {
-        // Le premier message de chaque champ.
-        const fieldErrors = z.flattenError(parsed.error).fieldErrors as Record<string, string[] | undefined>;
-        const errors: LeadFieldErrors = {};
-        for (const [field, messages] of Object.entries(fieldErrors)) {
-          if (messages?.[0]) errors[field as LeadField] = messages[0];
-        }
-        return { ok: false, errors };
-      }
-      const lead: Lead = { id: ids.next(), ...parsed.data, stage: "nouveau", createdAt: clock.now() };
+      const parsed = parseLead(input);
+      if (!parsed.ok) return parsed;
+      const now = clock.now();
+      const lead: Lead = { id: ids.next(), ...parsed.data, stage: "nouveau", createdAt: now };
       try {
-        await repository.insert(lead);
+        await repository.insert(lead, { id: ids.next(), leadId: lead.id, type: "lead_cree", occurredAt: now });
       } catch {
         // Une panne (base injoignable…) n'est pas une erreur de saisie : message général, la saisie est gardée.
         return { ok: false, errors: {}, formError: SAVE_FAILED };
       }
       return { ok: true, lead };
+    },
+
+    async updateLead(id: string, input: LeadInput): Promise<UpdateLeadResult> {
+      const parsed = parseLead(input);
+      if (!parsed.ok) return parsed;
+      if (!id.trim()) return { ok: false, errors: {}, formError: NOT_FOUND };
+      try {
+        // Seuls les 7 champs de la fiche sont écrits : l'étape (que les webhooks font avancer) n'est jamais réécrite.
+        const updated = await repository.updateDetails(id, parsed.data);
+        const lead = updated ? await repository.findById(id) : null;
+        if (!lead) return { ok: false, errors: {}, formError: NOT_FOUND };
+        return { ok: true, lead };
+      } catch {
+        return { ok: false, errors: {}, formError: SAVE_FAILED };
+      }
+    },
+
+    async getLeadDetail(id: string): Promise<LeadDetailResult> {
+      if (!id.trim()) return { ok: false, message: NOT_FOUND };
+      try {
+        const lead = await repository.findById(id);
+        if (!lead) return { ok: false, message: NOT_FOUND };
+        const history = sortHistory(await repository.listEvents(id)).map((event) => ({
+          id: event.id,
+          type: event.type,
+          label: EVENT_LABELS[event.type],
+          occurredAt: event.occurredAt,
+        }));
+        return { ok: true, lead, history };
+      } catch {
+        // Base injoignable : un message dans la fiche, le tableau reste affiché.
+        return { ok: false, message: LOAD_FAILED };
+      }
     },
 
     async getBoard(): Promise<BoardColumn[]> {

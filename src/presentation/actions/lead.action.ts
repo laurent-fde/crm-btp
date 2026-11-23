@@ -1,26 +1,37 @@
 "use server";
 
-// Présentation · action d'ajout d'un lead. Passe par le service (via la composition), jamais par la base.
+// Présentation · actions sur un lead (ajout, modification). Passent par le service (via la composition), jamais par la base.
 
 import { refresh } from "next/cache";
 import { getLeadService } from "@/composition";
-import type { LeadField, LeadFieldErrors, LeadInput } from "@/services/lead.service";
+import type { LeadField, LeadFieldErrors, LeadInput, SaveLeadResult } from "@/services/lead.service";
 
-export type AddLeadState =
+export type LeadFormState =
   | { ok: true }
   | { ok: false; errors: LeadFieldErrors; formError?: string; values?: Partial<Record<LeadField, string>> }
   | null;
+export type AddLeadState = LeadFormState;
 
 const FIELDS: LeadField[] = ["name", "company", "trade", "city", "postalCode", "email", "phone"];
 
-export async function addLeadAction(_previous: AddLeadState, formData: FormData): Promise<AddLeadState> {
-  const input = Object.fromEntries(
-    FIELDS.map((field) => [field, String(formData.get(field) ?? "")]),
-  ) as Required<LeadInput>;
+function readInput(formData: FormData): Required<LeadInput> {
+  return Object.fromEntries(FIELDS.map((field) => [field, String(formData.get(field) ?? "")])) as Required<LeadInput>;
+}
 
-  const result = await getLeadService().addLead(input);
+// Réponse commune : en cas de refus, les erreurs et la saisie ; en cas de succès, la page est redessinée.
+function toState(result: SaveLeadResult, input: Required<LeadInput>): LeadFormState {
   if (!result.ok) return { ok: false, errors: result.errors, formError: result.formError, values: input };
-
   refresh();
   return { ok: true };
+}
+
+export async function addLeadAction(_previous: LeadFormState, formData: FormData): Promise<LeadFormState> {
+  const input = readInput(formData);
+  return toState(await getLeadService().addLead(input), input);
+}
+
+export async function updateLeadAction(_previous: LeadFormState, formData: FormData): Promise<LeadFormState> {
+  const input = readInput(formData);
+  const leadId = String(formData.get("leadId") ?? "");
+  return toState(await getLeadService().updateLead(leadId, input), input);
 }
