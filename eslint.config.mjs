@@ -5,12 +5,14 @@ import nextTs from "eslint-config-next/typescript";
 const eslintConfig = defineConfig([
   ...nextVitals,
   ...nextTs,
-  // Règles d'architecture : chaque couche n'appelle que la suivante (voir .claude/rules/).
+  // Règles d'architecture (voir CLAUDE.md) : présentation → composition → service ← données.
+  // Le service définit ses ports (src/services/ports.ts), la couche données les implémente,
+  // src/composition.ts est le seul fichier qui branche les deux.
   {
     files: ["src/app/**", "src/presentation/**"],
     rules: {
       "no-restricted-imports": ["error", { patterns: [
-        { group: ["@/data/*"], message: "Présentation : passe par un service, jamais par @/data." },
+        { group: ["@/data", "@/data/*"], message: "Présentation : passe par un service (via @/composition), jamais par @/data." },
         { group: ["@libsql/*"], message: "Seule la couche données parle à la base." },
       ] }],
     },
@@ -19,8 +21,20 @@ const eslintConfig = defineConfig([
     files: ["src/services/**"],
     rules: {
       "no-restricted-imports": ["error", { patterns: [
-        { group: ["@/presentation/*", "react", "react-dom", "next", "next/*"], message: "Service : ne dépend pas de l'interface." },
+        { group: ["@/data", "@/data/*", "@/composition"], message: "Service : reçoit ses ports en paramètre, n'importe pas la couche données." },
+        { group: ["@/presentation", "@/presentation/*", "react", "react-dom", "next", "next/*"], message: "Service : ne dépend pas de l'interface." },
         { group: ["@libsql/*"], message: "Seule la couche données parle à la base." },
+      ] }],
+    },
+  },
+  {
+    files: ["src/services/domain/**"],
+    rules: {
+      "no-restricted-imports": ["error", { patterns: [
+        { group: ["@/data", "@/data/*", "@/composition"], message: "Domaine : règles pures, aucune dépendance." },
+        { group: ["@/presentation", "@/presentation/*", "react", "react-dom", "next", "next/*"], message: "Domaine : règles pures, aucune dépendance." },
+        { group: ["@libsql/*"], message: "Domaine : règles pures, aucune dépendance." },
+        { group: ["@/services/*", "!@/services/domain", "!@/services/domain/*", "../*"], message: "Domaine : n'importe que le domaine." },
       ] }],
     },
   },
@@ -28,7 +42,8 @@ const eslintConfig = defineConfig([
     files: ["src/data/**"],
     rules: {
       "no-restricted-imports": ["error", { patterns: [
-        { group: ["@/services/*", "@/presentation/*"], message: "Données : ne dépend d'aucune autre couche." },
+        { group: ["@/services/*", "!@/services/ports"], message: "Données : n'importe du service que ses ports (@/services/ports)." },
+        { group: ["@/presentation", "@/presentation/*", "@/composition"], message: "Données : ne dépend ni de l'interface ni de la composition." },
       ] }],
     },
   },

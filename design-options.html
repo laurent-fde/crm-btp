@@ -1,0 +1,260 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CRM-BTP · 3 design systems</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;700;800&family=Fraunces:opsz,wght@9..144,500;9..144,700&family=Source+Sans+3:wght@400;600&family=Inter+Tight:wght@500;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* ---------- Page (neutre, hors design systems) ---------- */
+:root {
+  --page-bg: #f3f3f1; --page-fg: #1d1d1b; --page-muted: #6b6b66; --page-line: #dcdcd6;
+  /* Couleurs d'étape, communes aux 3 propositions (lisibles en texte sur fond clair) */
+  --st-new: #5f6b7a; --st-sent: #2563c9; --st-open: #7c3aed; --st-click: #0e7c86;
+  --st-visit: #b45309; --st-won: #15803d; --st-lost: #b42318;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --page-bg: #101012; --page-fg: #ececea; --page-muted: #9a9a94; --page-line: #2c2c30;
+    --st-new: #9aa5b4; --st-sent: #7aa7ff; --st-open: #b794f6; --st-click: #4fd1c5;
+    --st-visit: #f6ad55; --st-won: #4ade80; --st-lost: #ff7b72;
+  }
+}
+:root[data-theme="dark"] {
+  --page-bg: #101012; --page-fg: #ececea; --page-muted: #9a9a94; --page-line: #2c2c30;
+  --st-new: #9aa5b4; --st-sent: #7aa7ff; --st-open: #b794f6; --st-click: #4fd1c5;
+  --st-visit: #f6ad55; --st-won: #4ade80; --st-lost: #ff7b72;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--page-bg); color: var(--page-fg); font: 15px/1.5 system-ui, sans-serif; }
+.page-head { max-width: 1320px; margin: 0 auto; padding: 28px 16px 8px; display: flex; gap: 16px; align-items: flex-start; justify-content: space-between; flex-wrap: wrap; }
+.page-head h1 { margin: 0 0 4px; font-size: 22px; }
+.page-head p { margin: 0; color: var(--page-muted); max-width: 70ch; }
+.toggle { border: 1px solid var(--page-line); background: transparent; color: var(--page-fg); padding: 8px 14px; border-radius: 999px; font: inherit; cursor: pointer; white-space: nowrap; }
+.grid { max-width: 1320px; margin: 0 auto; padding: 16px; display: grid; gap: 16px; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+@media (max-width: 1100px) { .grid { grid-template-columns: 1fr; } }
+
+/* ---------- Structure commune d'une proposition ---------- */
+.ds { background: var(--background); color: var(--foreground); border: 1px solid var(--border); border-radius: calc(var(--radius) * 2); padding: 22px; display: grid; gap: 22px; align-content: start; font-family: var(--font-body); min-width: 0; }
+.ds h2 { font-family: var(--font-heading); margin: 0; font-size: 26px; line-height: 1.1; }
+.ds .pitch { color: var(--muted-foreground); margin: 6px 0 0; font-size: 14px; }
+.ds h3 { margin: 0 0 10px; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted-foreground); font-family: var(--font-body); font-weight: 600; }
+.swatches { display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px; }
+.sw { aspect-ratio: 1; border-radius: var(--radius); border: 1px solid var(--border); }
+.sw-l { font-size: 10px; color: var(--muted-foreground); text-align: center; margin-top: 3px; font-family: var(--font-mono); overflow: hidden; text-overflow: ellipsis; }
+.type .t1 { font-family: var(--font-heading); font-size: 24px; line-height: 1.15; margin: 0 0 4px; }
+.type .t2 { margin: 0 0 4px; }
+.type .t3 { font-family: var(--font-mono); font-size: 13px; color: var(--muted-foreground); margin: 0; }
+.row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.btn { font: 600 14px/1 var(--font-body); padding: 10px 14px; border-radius: var(--radius); border: 1px solid transparent; cursor: pointer; }
+.btn-primary { background: var(--primary); color: var(--primary-foreground); }
+.btn-secondary { background: var(--secondary); color: var(--secondary-foreground); }
+.btn-outline { background: transparent; color: var(--foreground); border-color: var(--input); }
+.btn-ghost { background: transparent; color: var(--foreground); }
+.btn-destructive { background: var(--destructive); color: var(--destructive-foreground); }
+.btn:focus-visible, .input:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
+.field { display: grid; gap: 6px; margin-bottom: 12px; }
+.field label { font-size: 13px; font-weight: 600; }
+.input { font: 14px var(--font-body); padding: 9px 11px; border-radius: var(--radius); border: 1px solid var(--input); background: var(--card); color: var(--foreground); width: 100%; }
+.input[aria-invalid="true"] { border-color: var(--destructive); }
+.err { color: var(--destructive); font-size: 12px; margin: 0; }
+.card { background: var(--card); color: var(--card-foreground); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px; display: grid; gap: 10px; }
+.card .who { display: flex; justify-content: space-between; gap: 8px; align-items: flex-start; }
+.card .name { font-weight: 700; font-size: 15px; margin: 0; }
+.card .co { margin: 0; color: var(--muted-foreground); font-size: 13px; }
+.card .last { font-family: var(--font-mono); font-size: 12px; color: var(--muted-foreground); border-top: 1px solid var(--border); padding-top: 9px; display: flex; justify-content: space-between; gap: 8px; }
+.badge { --c: var(--st-new); display: inline-flex; align-items: center; gap: 6px; font: 600 12px/1 var(--font-body); color: var(--c); background: color-mix(in srgb, var(--c) 14%, transparent); padding: 5px 8px; white-space: nowrap; }
+.b-new { --c: var(--st-new); } .b-sent { --c: var(--st-sent); } .b-open { --c: var(--st-open); } .b-click { --c: var(--st-click); }
+.b-visit { --c: var(--st-visit); } .b-won { --c: var(--st-won); } .b-lost { --c: var(--st-lost); }
+.col-head { display: flex; justify-content: space-between; align-items: center; font-weight: 700; font-size: 13px; margin-bottom: 8px; }
+.count { font-family: var(--font-mono); color: var(--muted-foreground); font-weight: 400; }
+
+/* ---------- A · Chantier ---------- */
+.ds-a {
+  --font-heading: "Archivo", sans-serif; --font-body: "Archivo", sans-serif; --font-mono: "JetBrains Mono", monospace;
+  --radius: 3px;
+  --background: #f5f5f2; --foreground: #1a1a18; --card: #ffffff; --card-foreground: #1a1a18;
+  --primary: #f5b800; --primary-foreground: #1a1a18; --secondary: #23272e; --secondary-foreground: #ffffff;
+  --muted-foreground: #5c5b55; --border: #d9d8d2; --input: #b9b8b0; --ring: #1a1a18;
+  --destructive: #c8321e; --destructive-foreground: #ffffff; --accent: #fff3c4;
+}
+.ds-a h2 { font-weight: 800; text-transform: uppercase; letter-spacing: -.01em; }
+.ds-a .t1 { font-weight: 800; text-transform: uppercase; }
+.ds-a .badge { border-radius: 2px; text-transform: uppercase; letter-spacing: .04em; font-size: 11px; }
+.ds-a .hot { color: #1a1a18; background: repeating-linear-gradient(-45deg, #f5b800 0 6px, #ffd54a 6px 12px); }
+.ds-a .card { border-left: 4px solid var(--primary); }
+
+/* ---------- B · Atelier ---------- */
+.ds-b {
+  --font-heading: "Fraunces", serif; --font-body: "Source Sans 3", sans-serif; --font-mono: "JetBrains Mono", monospace;
+  --radius: 12px;
+  --background: #faf6f1; --foreground: #2a211c; --card: #fffdfa; --card-foreground: #2a211c;
+  --primary: #b4532a; --primary-foreground: #ffffff; --secondary: #f2e6da; --secondary-foreground: #2a211c;
+  --muted-foreground: #75665b; --border: #e8dccf; --input: #d6c6b6; --ring: #b4532a;
+  --destructive: #b42318; --destructive-foreground: #ffffff; --accent: #f3e3d3;
+}
+.ds-b .btn { border-radius: 999px; padding: 10px 16px; }
+.ds-b .badge { border-radius: 999px; }
+.ds-b .hot { color: #ffffff; background: #b4532a; }
+.ds-b .card { box-shadow: 0 1px 2px rgba(60, 35, 20, .06), 0 4px 14px rgba(60, 35, 20, .06); }
+
+/* ---------- C · Plan ---------- */
+.ds-c {
+  --font-heading: "Inter Tight", sans-serif; --font-body: "Inter", sans-serif; --font-mono: "JetBrains Mono", monospace;
+  --radius: 6px;
+  --background: #f4f7fb; --foreground: #0f1b2d; --card: #ffffff; --card-foreground: #0f1b2d;
+  --primary: #1f4fd1; --primary-foreground: #ffffff; --secondary: #e3ecff; --secondary-foreground: #163a9c;
+  --muted-foreground: #4d5d73; --border: #d5deea; --input: #bccada; --ring: #1f4fd1;
+  --destructive: #d02c2c; --destructive-foreground: #ffffff; --accent: #e3ecff;
+  background-image: linear-gradient(var(--grid) 1px, transparent 1px), linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+  background-size: 24px 24px; --grid: rgba(31, 79, 209, .05);
+}
+.ds-c h2 { font-weight: 700; letter-spacing: -.02em; }
+.ds-c .badge { border-radius: 6px; }
+.ds-c .badge::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--c); }
+.ds-c .hot { --c: #e8590c; }
+.ds-c .card { border-radius: 8px; }
+
+/* ---------- Mode sombre des 3 propositions ---------- */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .ds-a { --background: #141517; --foreground: #ededea; --card: #1d1f22; --card-foreground: #ededea; --primary: #ffc61a; --primary-foreground: #141517; --secondary: #2c3038; --secondary-foreground: #ededea; --muted-foreground: #a3a29b; --border: #33363b; --input: #4a4d53; --ring: #ffc61a; --destructive: #ff6b55; --destructive-foreground: #141517; }
+  :root:not([data-theme="light"]) .ds-b { --background: #1b1512; --foreground: #f3ebe4; --card: #251d19; --card-foreground: #f3ebe4; --primary: #e07a4b; --primary-foreground: #1b1512; --secondary: #33281f; --secondary-foreground: #f3ebe4; --muted-foreground: #b3a397; --border: #3a2f29; --input: #54463d; --ring: #e07a4b; --destructive: #ff7b6b; --destructive-foreground: #1b1512; }
+  :root:not([data-theme="light"]) .ds-b .hot { background: #e07a4b; color: #1b1512; }
+  :root:not([data-theme="light"]) .ds-c { --background: #0a1220; --foreground: #e4ecf7; --card: #111c2e; --card-foreground: #e4ecf7; --primary: #5b8cff; --primary-foreground: #06101f; --secondary: #172a4d; --secondary-foreground: #c9d9ff; --muted-foreground: #8fa1bb; --border: #22324a; --input: #31445f; --ring: #5b8cff; --destructive: #ff6b6b; --destructive-foreground: #06101f; --grid: rgba(91, 140, 255, .07); }
+  :root:not([data-theme="light"]) .ds-c .hot { --c: #ff922b; }
+}
+:root[data-theme="dark"] .ds-a { --background: #141517; --foreground: #ededea; --card: #1d1f22; --card-foreground: #ededea; --primary: #ffc61a; --primary-foreground: #141517; --secondary: #2c3038; --secondary-foreground: #ededea; --muted-foreground: #a3a29b; --border: #33363b; --input: #4a4d53; --ring: #ffc61a; --destructive: #ff6b55; --destructive-foreground: #141517; }
+:root[data-theme="dark"] .ds-b { --background: #1b1512; --foreground: #f3ebe4; --card: #251d19; --card-foreground: #f3ebe4; --primary: #e07a4b; --primary-foreground: #1b1512; --secondary: #33281f; --secondary-foreground: #f3ebe4; --muted-foreground: #b3a397; --border: #3a2f29; --input: #54463d; --ring: #e07a4b; --destructive: #ff7b6b; --destructive-foreground: #1b1512; }
+:root[data-theme="dark"] .ds-b .hot { background: #e07a4b; color: #1b1512; }
+:root[data-theme="dark"] .ds-c { --background: #0a1220; --foreground: #e4ecf7; --card: #111c2e; --card-foreground: #e4ecf7; --primary: #5b8cff; --primary-foreground: #06101f; --secondary: #172a4d; --secondary-foreground: #c9d9ff; --muted-foreground: #8fa1bb; --border: #22324a; --input: #31445f; --ring: #5b8cff; --destructive: #ff6b6b; --destructive-foreground: #06101f; --grid: rgba(91, 140, 255, .07); }
+:root[data-theme="dark"] .ds-c .hot { --c: #ff922b; }
+</style>
+</head>
+<body>
+<header class="page-head">
+  <div>
+    <h1>CRM-BTP · 3 design systems</h1>
+    <p>Couleurs, typographie, boutons, champs, carte de lead et badges d'étape. Les données sont fictives. Bascule clair / sombre pour juger les deux modes, puis choisis A, B ou C.</p>
+  </div>
+  <button class="toggle" id="toggle" type="button">☀️ / 🌙 Basculer le thème</button>
+</header>
+
+<main class="grid">
+<!-- Le même contenu est rendu 3 fois par le script, une fois par proposition -->
+</main>
+
+<template id="tpl">
+  <div>
+    <h2 data-name></h2>
+    <p class="pitch" data-pitch></p>
+  </div>
+
+  <section>
+    <h3>Couleurs</h3>
+    <div class="swatches">
+      <div><div class="sw" style="background:var(--primary)"></div><div class="sw-l">primary</div></div>
+      <div><div class="sw" style="background:var(--secondary)"></div><div class="sw-l">secondary</div></div>
+      <div><div class="sw" style="background:var(--background)"></div><div class="sw-l">fond</div></div>
+      <div><div class="sw" style="background:var(--card)"></div><div class="sw-l">carte</div></div>
+      <div><div class="sw" style="background:var(--border)"></div><div class="sw-l">bordure</div></div>
+      <div><div class="sw" style="background:var(--destructive)"></div><div class="sw-l">danger</div></div>
+    </div>
+  </section>
+
+  <section class="type">
+    <h3>Typographie</h3>
+    <p class="t1">Suivi des leads</p>
+    <p class="t2">Karim Benali, électricien à Lyon, a cliqué sur le lien de l'e-mail 2.</p>
+    <p class="t3" data-fonts></p>
+  </section>
+
+  <section>
+    <h3>Boutons</h3>
+    <div class="row">
+      <button class="btn btn-primary" type="button">Ajouter un lead</button>
+      <button class="btn btn-secondary" type="button">Simuler</button>
+      <button class="btn btn-outline" type="button">Modifier</button>
+      <button class="btn btn-ghost" type="button">Annuler</button>
+      <button class="btn btn-destructive" type="button">Supprimer</button>
+    </div>
+  </section>
+
+  <section>
+    <h3>Champs</h3>
+    <div class="field">
+      <label data-for="metier">Métier</label>
+      <input class="input" data-id="metier" value="Plombier">
+    </div>
+    <div class="field">
+      <label data-for="email">E-mail</label>
+      <input class="input" data-id="email" value="jeanne.morel@" aria-invalid="true" data-describedby="email-err">
+      <p class="err" data-errid="email-err">L'adresse e-mail n'est pas valide.</p>
+    </div>
+  </section>
+
+  <section>
+    <h3>Carte de lead</h3>
+    <div class="col-head"><span>Lien cliqué</span><span class="count">3</span></div>
+    <article class="card">
+      <div class="who">
+        <div>
+          <p class="name">Karim Benali</p>
+          <p class="co">Benali Élec · Électricien · Lyon</p>
+        </div>
+        <span class="badge hot">Chaud</span>
+      </div>
+      <div class="row">
+        <span class="badge b-click">Lien cliqué</span>
+      </div>
+      <div class="last"><span>Lien cliqué · e-mail 2</span><span>23/11 · 09:14</span></div>
+    </article>
+  </section>
+
+  <section>
+    <h3>Étapes</h3>
+    <div class="row">
+      <span class="badge b-new">Nouveau</span>
+      <span class="badge b-sent">E-mail envoyé</span>
+      <span class="badge b-open">Ouvert</span>
+      <span class="badge b-click">Lien cliqué</span>
+      <span class="badge b-visit">Page visitée</span>
+      <span class="badge b-won">Gagné</span>
+      <span class="badge b-lost">Perdu</span>
+    </div>
+  </section>
+</template>
+
+<script>
+const options = [
+  { cls: "ds-a", name: "A · Chantier", pitch: "Jaune signalisation et ardoise. Direct, robuste, angles nets : l'univers du BTP, sans détour.", fonts: "Archivo (titres et texte) · JetBrains Mono (dates)" },
+  { cls: "ds-b", name: "B · Atelier", pitch: "Brique et crème. Chaleureux et artisanal, formes arrondies : le savoir-faire plutôt que le chantier.", fonts: "Fraunces (titres) · Source Sans 3 (texte) · JetBrains Mono (dates)" },
+  { cls: "ds-c", name: "C · Plan", pitch: "Bleu plan et quadrillage discret. Précis et dense, comme un plan d'architecte : un outil de pilotage.", fonts: "Inter Tight (titres) · Inter (texte) · JetBrains Mono (dates)" },
+];
+const grid = document.querySelector(".grid");
+const tpl = document.getElementById("tpl");
+for (const o of options) {
+  const section = document.createElement("section");
+  section.className = "ds " + o.cls;
+  section.setAttribute("aria-label", o.name);
+  section.append(tpl.content.cloneNode(true));
+  section.querySelector("[data-name]").textContent = o.name;
+  section.querySelector("[data-pitch]").textContent = o.pitch;
+  section.querySelector("[data-fonts]").textContent = o.fonts;
+  // Identifiants uniques par proposition, pour relier chaque label et message d'erreur à son champ
+  section.querySelectorAll("[data-id]").forEach((el) => { el.id = o.cls + "-" + el.dataset.id; });
+  section.querySelectorAll("[data-for]").forEach((el) => { el.htmlFor = o.cls + "-" + el.dataset.for; });
+  section.querySelectorAll("[data-errid]").forEach((el) => { el.id = o.cls + "-" + el.dataset.errid; });
+  section.querySelectorAll("[data-describedby]").forEach((el) => { el.setAttribute("aria-describedby", o.cls + "-" + el.dataset.describedby); });
+  grid.append(section);
+}
+
+const root = document.documentElement;
+document.getElementById("toggle").addEventListener("click", () => {
+  const current = root.dataset.theme || (matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+  root.dataset.theme = current === "dark" ? "light" : "dark";
+});
+</script>
+</body>
+</html>
