@@ -68,6 +68,16 @@ describe("service · webhook.service · receive", () => {
     expect(leads[0].stage).toBe("gagne");
   });
 
+  // Critère 1 (lot 5) : « Ouvert » + lien cliqué signé → « Lien cliqué ».
+  it("fait passer un lead « Ouvert » dans « Lien cliqué »", async () => {
+    const { service, leads, events } = setup("ouvert");
+
+    expect(await service.receive(...signed(payload({ type: "lien_clique" })))).toEqual({ ok: true, duplicate: false });
+
+    expect(leads[0].stage).toBe("lien_clique");
+    expect(events.map((event) => event.type)).toEqual(["lien_clique"]);
+  });
+
   it("fait revenir un lead perdu à l'étape de son action", async () => {
     const { service, leads } = setup("perdu");
 

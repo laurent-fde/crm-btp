@@ -1,36 +1,81 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# CRM-BTP
 
-## Getting Started
+Démo d'un mini CRM de suivi de leads froids : des artisans et entreprises du bâtiment, à qui l'on envoie une séquence d'e-mails. Chaque action du destinataire (e-mail ouvert, lien cliqué, page visitée, RDV pris) arrive par un **webhook signé** et fait avancer le lead, sans saisie à la main.
 
-First, run the development server:
+En ligne : https://crm-btp-pi.vercel.app (données fictives).
+
+Étapes d'un lead : Nouveau → E-mail envoyé → Ouvert → Lien cliqué → Page visitée → Gagné (RDV pris), ou Perdu. Un lead n'avance que vers l'avant, et chaque événement reste dans son historique. Seule exception : une action reçue sur un lead Perdu le remet à l'étape de cette action.
+
+## Lancer en local
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+pnpm install
+pnpm dev          # http://localhost:3000
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+En local, la base est un fichier SQLite (`.data/crm-btp.db`), créé au premier lancement. Aucune variable n'est nécessaire.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+| Commande | Rôle |
+|---|---|
+| `pnpm test` | tests (Vitest) |
+| `pnpm typecheck` | vérification des types |
+| `pnpm lint` | ESLint, dont les imports interdits entre couches |
+| `pnpm build` / `pnpm start` | construire puis lancer l'app |
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Variables d'environnement
 
-## Learn More
+Elles sont listées, sans valeur, dans `.env.example`. En local, mets les tiennes dans `.env.local` (ignoré par Git).
 
-To learn more about Next.js, take a look at the following resources:
+| Variable | En local | En ligne (Vercel) |
+|---|---|---|
+| `DATABASE_URL` | vide : SQLite | adresse de la base Turso (`libsql://…`) |
+| `DATABASE_AUTH_TOKEN` | vide | jeton Turso |
+| `WEBHOOK_SECRET` | vide : secret de développement `secret-de-developpement-local` | secret partagé avec l'expéditeur des webhooks |
+| `APP_PASSWORD` | vide : pas de verrou | facultatif : mot de passe sur toute l'app (sauf le webhook) |
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Envoyer un webhook
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+`POST /api/webhooks`, corps JSON, signé en HMAC-SHA256 avec `WEBHOOK_SECRET`. La signature, `sha256=<hex>`, va dans l'en-tête `X-Webhook-Signature`, et elle est calculée sur le corps exact envoyé.
 
-## Deploy on Vercel
+```json
+{ "id": "evt-1", "type": "lien_clique", "leadId": "<id du lead>", "occurredAt": "2026-11-23T10:00:00+01:00" }
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+- `id` : identifiant unique de l'événement chez l'expéditeur. Un événement renvoyé avec le même `id` n'est compté qu'une fois.
+- `type` : `email_ouvert`, `lien_clique`, `page_visitee` ou `rdv_pris`.
+- `leadId` : l'identifiant du lead. Il se lit dans l'adresse de sa fiche : `/?lead=<id>`.
+- `occurredAt` : date ISO 8601 avec fuseau. Mets la date du moment : l'historique classe les événements à cette date, et le badge « Chaud » ne vaut que pour une action de moins de 48 h.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Essai avec `curl` (en local, avec le secret de développement ; si tu as défini `WEBHOOK_SECRET` dans `.env.local`, mets cette valeur à la place) :
+
+```bash
+WEBHOOK_SECRET=secret-de-developpement-local
+BODY='{"id":"evt-1","type":"lien_clique","leadId":"<id du lead>","occurredAt":"2026-11-23T10:00:00+01:00"}'
+SIG="sha256=$(printf '%s' "$BODY" | openssl dgst -sha256 -hmac "$WEBHOOK_SECRET" | sed 's/^.* //')"
+curl -i -X POST http://localhost:3000/api/webhooks \
+  -H "Content-Type: application/json" \
+  -H "X-Webhook-Signature: $SIG" \
+  --data-raw "$BODY"
+```
+
+Pour la version en ligne, remplace l'adresse par `https://crm-btp-pi.vercel.app/api/webhooks`, et le secret par le `WEBHOOK_SECRET` de production (Vercel → projet → Settings → Environment Variables).
+
+| Réponse | Quand |
+|---|---|
+| `200 {"ok":true,"duplicate":false}` | événement enregistré, le lead avance (s'il n'est pas déjà plus loin) |
+| `200 {"ok":true,"duplicate":true}` | événement déjà reçu : rien ne change |
+| `401` | signature absente ou fausse |
+| `400` | événement mal formé, ou lead inconnu |
+| `503` | base momentanément indisponible : renvoie plus tard |
+| `500` | configuration incomplète en ligne (`WEBHOOK_SECRET` ou `DATABASE_URL` manquant) : l'app refuse de tourner sans |
+
+## Architecture
+
+3 couches, avec un cœur métier séparé :
+
+- `src/app/` et `src/presentation/` : présentation (pages, actions, composants). Le webhook (`src/app/api/webhooks/route.ts`) est une porte d'entrée comme l'écran.
+- `src/services/` : domaine (règles pures), ports (interfaces) et cas d'usage, qui valident toute saisie.
+- `src/data/` : adaptateurs (base libsql/Turso, horloge, faux fournisseur d'e-mails).
+- `src/composition.ts` : le câblage entre services et adaptateurs.
+
+Stack : Next.js 16, React 19, TypeScript, Tailwind CSS 4, shadcn, libsql (SQLite en local, Turso en ligne), Vitest. Déployé sur Vercel.
