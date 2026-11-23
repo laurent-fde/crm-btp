@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { groupByStage, normalizeFrenchPhone, STAGES, type Lead } from "./lead";
+import { groupByStage, normalizeFrenchPhone, sortHistory, STAGES, type Lead, type LeadEvent } from "./lead";
 
 const lead = (over: Partial<Lead>): Lead => ({
   id: "1",
@@ -68,4 +68,21 @@ describe("domaine · lead · normalizeFrenchPhone", () => {
       expect(normalizeFrenchPhone(saisie)).toBeNull();
     },
   );
+});
+
+describe("domaine · lead · sortHistory", () => {
+  const event = (id: string, iso: string): LeadEvent => ({
+    id,
+    leadId: "lead-1",
+    type: "lead_cree",
+    occurredAt: new Date(iso),
+  });
+
+  // Critère 1 (lot 2) : l'historique se lit du plus ancien au plus récent, il commence donc par « Lead créé ».
+  it("range l'historique du plus ancien au plus récent, sans modifier la liste reçue", () => {
+    const recu = [event("b", "2026-11-24T09:00:00.000Z"), event("a", "2026-11-23T09:00:00.000Z")];
+
+    expect(sortHistory(recu).map((e) => e.id)).toEqual(["a", "b"]);
+    expect(recu.map((e) => e.id)).toEqual(["b", "a"]);
+  });
 });

@@ -1,8 +1,9 @@
 import { connection } from "next/server";
 import { Suspense } from "react";
 import { getLeadFormOptions, getLeadService } from "@/composition";
-import { addLeadAction } from "@/presentation/actions/lead.action";
+import { addLeadAction, updateLeadAction } from "@/presentation/actions/lead.action";
 import { KanbanBoard } from "@/presentation/components/kanban-board";
+import { LeadSheet } from "@/presentation/components/lead-sheet";
 import { NewLeadDialog } from "@/presentation/components/new-lead-dialog";
 import { ThemeToggle } from "@/presentation/components/theme-toggle";
 
@@ -13,7 +14,17 @@ async function Board() {
   return <KanbanBoard columns={columns} />;
 }
 
-export default function Home() {
+type SearchParams = Promise<{ [key: string]: string | string[] | undefined }>;
+
+// La fiche ouverte par l'adresse (?lead=<id>), lue à chaque requête.
+async function OpenLead({ searchParams, trades }: { searchParams: SearchParams; trades: readonly string[] }) {
+  const { lead } = await searchParams;
+  if (typeof lead !== "string" || !lead) return null;
+  const result = await getLeadService().getLeadDetail(lead);
+  return <LeadSheet key={lead} result={result} action={updateLeadAction} trades={trades} />;
+}
+
+export default function Home({ searchParams }: { searchParams: SearchParams }) {
   const { trades } = getLeadFormOptions();
 
   return (
@@ -30,6 +41,9 @@ export default function Home() {
       </header>
       <Suspense fallback={<p className="text-sm text-muted-foreground">Chargement du tableau…</p>}>
         <Board />
+      </Suspense>
+      <Suspense fallback={null}>
+        <OpenLead searchParams={searchParams} trades={trades} />
       </Suspense>
     </main>
   );

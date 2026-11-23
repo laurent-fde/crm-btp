@@ -129,3 +129,76 @@ describe("présentation · LeadForm", () => {
     await act(async () => terminer({ ok: true }));
   });
 });
+
+describe("présentation · LeadForm · modification (lot 2)", () => {
+  const initialValues = { name: "Karim Benali", email: "karim@exemple.fr", city: "Lyon", postalCode: "69003" };
+
+  function renderEdit(response: AddLeadState) {
+    const action = vi.fn<(previous: AddLeadState, data: FormData) => Promise<AddLeadState>>(async () => response);
+    render(
+      <LeadForm
+        action={action}
+        trades={[]}
+        idPrefix="fiche"
+        leadId="lead-1"
+        initialValues={initialValues}
+        submitLabel="Enregistrer"
+        pendingLabel="Enregistrement…"
+        successMessage="Modifications enregistrées"
+      />,
+    );
+    return action;
+  }
+
+  it("préremplit les champs et envoie l'identifiant du lead", async () => {
+    const action = renderEdit({ ok: true });
+
+    expect((screen.getByLabelText("Nom") as HTMLInputElement).value).toBe("Karim Benali");
+    expect((screen.getByLabelText("Ville") as HTMLInputElement).value).toBe("Lyon");
+    expect(screen.getByLabelText("Nom").id).toBe("fiche-name");
+    fireEvent.click(screen.getByRole("button", { name: "Enregistrer" }));
+
+    await vi.waitFor(() => expect(action).toHaveBeenCalledOnce());
+    const data = action.mock.calls[0][1];
+    expect(data.get("leadId")).toBe("lead-1");
+    await vi.waitFor(() => expect(screen.getByRole("status").textContent).toBe("Modifications enregistrées"));
+  });
+
+  // Revue PR #9 : la zone d'annonce existe dès le départ (lue par les lecteurs d'écran) et le message s'efface à la saisie suivante.
+  it("annonce le succès dans une zone toujours présente, effacée dès qu'on modifie un champ", async () => {
+    renderEdit({ ok: true });
+    expect(screen.getByRole("status").textContent).toBe("");
+
+    fireEvent.click(screen.getByRole("button", { name: "Enregistrer" }));
+    await vi.waitFor(() => expect(screen.getByRole("status").textContent).toBe("Modifications enregistrées"));
+    fireEvent.input(screen.getByLabelText("Ville"), { target: { value: "Lyo" } });
+
+    expect(screen.getByRole("status").textContent).toBe("");
+  });
+
+  // Critère 2 (lot 2) : après l'enregistrement, la fiche relue (refresh) montre la nouvelle ville.
+  it("affiche les valeurs relues après l'enregistrement", async () => {
+    const action = vi.fn<(previous: AddLeadState, data: FormData) => Promise<AddLeadState>>(async () => ({ ok: true }));
+    const props = { action, trades: [], idPrefix: "fiche", leadId: "lead-1", submitLabel: "Enregistrer" };
+    const { rerender } = render(<LeadForm {...props} initialValues={initialValues} />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Enregistrer" }));
+    await vi.waitFor(() => expect(action).toHaveBeenCalledOnce());
+    rerender(<LeadForm {...props} initialValues={{ ...initialValues, city: "Villeurbanne" }} />);
+
+    expect((screen.getByLabelText("Ville") as HTMLInputElement).value).toBe("Villeurbanne");
+  });
+
+  // Critère 3 (lot 2) : nom effacé, le message de l'ajout s'affiche, relié au champ.
+  it("affiche « Le nom est obligatoire » relié au champ Nom", async () => {
+    renderEdit({ ok: false, errors: { name: "Le nom est obligatoire" }, values: { ...initialValues, name: "" } });
+
+    fireEvent.click(screen.getByRole("button", { name: "Enregistrer" }));
+
+    const message = await screen.findByText("Le nom est obligatoire");
+    const champ = screen.getByLabelText("Nom") as HTMLInputElement;
+    expect(champ.getAttribute("aria-describedby")).toBe(message.id);
+    expect(champ.value).toBe("");
+    expect((screen.getByLabelText("Ville") as HTMLInputElement).value).toBe("Lyon");
+  });
+});

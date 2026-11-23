@@ -9,7 +9,7 @@ const LOCAL_URL = `file:${LOCAL_DIR}/crm-btp.db`;
 // Migrations numérotées : on n'en modifie jamais une, on en ajoute une à la fin.
 // La table schema_migrations retient combien ont déjà été appliquées
 // (pas PRAGMA user_version : Turso Cloud refuse de l'écrire).
-const migrations: string[] = [
+export const MIGRATIONS: readonly string[] = [
   // Lot 1 : les leads. Dates en ISO 8601 (UTC), champs facultatifs à NULL.
   `CREATE TABLE leads (
     id TEXT PRIMARY KEY,
@@ -24,6 +24,17 @@ const migrations: string[] = [
   )`,
   // Lot 1 (ajout) : le code postal, facultatif.
   `ALTER TABLE leads ADD COLUMN postal_code TEXT`,
+  // Lot 2 : l'historique des leads, un événement par ligne (quoi, quand).
+  `CREATE TABLE lead_events (
+    id TEXT PRIMARY KEY,
+    lead_id TEXT NOT NULL REFERENCES leads (id),
+    type TEXT NOT NULL,
+    occurred_at TEXT NOT NULL
+  )`,
+  `CREATE INDEX lead_events_lead ON lead_events (lead_id, occurred_at)`,
+  // Lot 2 : les leads créés avant l'historique reçoivent leur « Lead créé », à leur date de création.
+  `INSERT INTO lead_events (id, lead_id, type, occurred_at)
+    SELECT 'cree-' || id, id, 'lead_cree', created_at FROM leads`,
 ];
 
 async function appliedVersion(client: Client): Promise<number | null> {
@@ -31,7 +42,7 @@ async function appliedVersion(client: Client): Promise<number | null> {
   return rows[0]?.v == null ? null : Number(rows[0].v);
 }
 
-export async function migrate(client: Client, list: readonly string[] = migrations) {
+export async function migrate(client: Client, list: readonly string[] = MIGRATIONS) {
   await client.execute("CREATE TABLE IF NOT EXISTS schema_migrations (version INTEGER NOT NULL)");
   // Revue de #34 : une version ne peut être notée qu'une fois. Un second serveur qui rejoue une migration
   // voit donc toujours sa transaction échouer et s'annuler, même si la migration elle-même est rejouable.

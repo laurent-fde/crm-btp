@@ -43,6 +43,21 @@ export type Lead = {
 
 export type BoardColumn = { stage: Stage; label: string; leads: Lead[] };
 
+// Historique d'un lead : chaque événement (quoi, quand). Les lots suivants ajoutent leurs types.
+export const EVENT_TYPES = ["lead_cree"] as const;
+export type LeadEventType = (typeof EVENT_TYPES)[number];
+
+export const EVENT_LABELS: Record<LeadEventType, string> = {
+  lead_cree: "Lead créé",
+};
+
+export type LeadEvent = { id: string; leadId: string; type: LeadEventType; occurredAt: Date };
+
+// L'historique se lit du plus ancien au plus récent (tri stable : l'ordre d'écriture départage).
+export function sortHistory(events: readonly LeadEvent[]): LeadEvent[] {
+  return [...events].sort((a, b) => a.occurredAt.getTime() - b.occurredAt.getTime());
+}
+
 // Le tableau : toujours les 7 colonnes, dans l'ordre des étapes ; le lead le plus récent en premier.
 export function groupByStage(leads: readonly Lead[]): BoardColumn[] {
   const sorted = [...leads].sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
