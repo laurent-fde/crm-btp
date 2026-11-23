@@ -32,7 +32,6 @@ Une démo de mini CRM de suivi de leads froids (artisans du bâtiment), pilotée
 - L'heure passe toujours par le port `Clock`, jamais `new Date()` dans le domaine ou le service : c'est ce qui permet de simuler le passage du temps.
 - Changer de base (SQLite → Turso) ou de fournisseur d'e-mails ne modifie que `src/data/` (et au plus `src/composition.ts`).
 - `pnpm lint` bloque les imports interdits entre couches.
-- Les fichiers `.claude/rules/` viennent de Pipeline et seront réécrits (étape règles) : en cas de contradiction, cette section fait foi.
 Chaque test est à côté du fichier testé (`*.test.ts`).
 
 ## Design system
