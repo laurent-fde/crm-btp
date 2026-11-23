@@ -109,4 +109,41 @@ describe("présentation · route POST /api/webhooks", () => {
     expect(response.status).toBe(503);
     expect(await response.json()).toEqual({ error: "Enregistrement impossible pour le moment." });
   });
+
+  // #15 : un corps démesuré est refusé avant tout calcul de signature, sans appeler le service.
+  it("refuse en 413 un corps de plus de 64 Ko, sans rien modifier", async () => {
+    const raw = body({ id: "x".repeat(70 * 1024) });
+
+    const response = await post(raw);
+
+    expect(response.status).toBe(413);
+    expect(await response.json()).toEqual({ error: "Événement trop volumineux (64 Ko au plus)." });
+    expect(fake.leads[0].stage).toBe("ouvert");
+    expect(fake.events).toEqual([]);
+  });
+
+  it("accepte un corps de 64 Ko tout juste (il passe au service)", async () => {
+    const raw = "x".repeat(64 * 1024);
+
+    const response = await post(raw);
+
+    expect(response.status).toBe(400); // mal formé, mais lu et transmis au service
+  });
+
+  it("refuse en 413 sans lire le corps quand Content-Length annonce plus de 64 Ko", async () => {
+    let read = false;
+    const stream = new ReadableStream({
+      pull(controller) {
+        read = true;
+        controller.close();
+      },
+    }, { highWaterMark: 0 }); // le flux ne lit rien tant qu'on ne le lui demande pas
+    const request = new Request("https://crm-btp.example/api/webhooks", { method: "POST", body: stream, duplex: "half" } as RequestInit);
+    Object.defineProperty(request, "headers", { value: new Headers({ "content-length": String(100 * 1024) }) });
+
+    const response = await POST(request);
+
+    expect(response.status).toBe(413);
+    expect(read).toBe(false);
+  });
 });
