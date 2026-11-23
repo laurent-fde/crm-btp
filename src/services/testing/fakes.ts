@@ -19,7 +19,16 @@ export function createFakeLeadRepository(initial: Lead[] = [], initialEvents: Le
       return true;
     },
     listEvents: async (leadId) => events.filter((event) => event.leadId === leadId),
-    recordEmailSent: async (event, stageChange) => {
+    findEventByExternalId: async (externalId) => events.find((event) => event.externalId === externalId) ?? null,
+    lastEventDates: async (types) => {
+      const last: Record<string, Date> = {};
+      for (const event of events) {
+        if (!types.includes(event.type)) continue;
+        if (!last[event.leadId] || event.occurredAt > last[event.leadId]) last[event.leadId] = event.occurredAt;
+      }
+      return last;
+    },
+    recordEvent: async (event, stageChange) => {
       events.push(event);
       const lead = leads.find((l) => l.id === event.leadId);
       if (lead && stageChange && lead.stage === stageChange.from) lead.stage = stageChange.to;

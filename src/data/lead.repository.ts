@@ -30,11 +30,12 @@ function toEvent(row: Row): LeadEvent {
     occurredAt: new Date(String(row.occurred_at)),
     ...(row.email_step != null && { emailStep: Number(row.email_step) }),
     ...(row.email_final != null && { emailFinal: Number(row.email_final) === 1 }),
+    ...(row.external_id != null && { externalId: String(row.external_id) }),
   };
 }
 
 const insertEvent = (event: LeadEvent) => ({
-  sql: "INSERT INTO lead_events (id, lead_id, type, occurred_at, email_step, email_final) VALUES (?, ?, ?, ?, ?, ?)",
+  sql: "INSERT INTO lead_events (id, lead_id, type, occurred_at, email_step, email_final, external_id) VALUES (?, ?, ?, ?, ?, ?, ?)",
   args: [
     event.id,
     event.leadId,
@@ -42,6 +43,7 @@ const insertEvent = (event: LeadEvent) => ({
     event.occurredAt.toISOString(),
     event.emailStep ?? null,
     event.emailFinal === undefined ? null : event.emailFinal ? 1 : 0,
+    event.externalId ?? null,
   ],
 });
 
@@ -103,13 +105,32 @@ export function createLeadRepository(db: Database): LeadRepository {
     async listEvents(leadId) {
       await db.ready;
       const { rows } = await db.client.execute({
-        sql: "SELECT id, lead_id, type, occurred_at, email_step, email_final FROM lead_events WHERE lead_id = ? ORDER BY occurred_at, rowid",
+        sql: "SELECT id, lead_id, type, occurred_at, email_step, email_final, external_id FROM lead_events WHERE lead_id = ? ORDER BY occurred_at, rowid",
         args: [leadId],
       });
       return rows.map(toEvent);
     },
 
-    async recordEmailSent(event, stageChange) {
+    async findEventByExternalId(externalId) {
+      await db.ready;
+      const { rows } = await db.client.execute({
+        sql: "SELECT id, lead_id, type, occurred_at, email_step, email_final, external_id FROM lead_events WHERE external_id = ?",
+        args: [externalId],
+      });
+      return rows[0] ? toEvent(rows[0]) : null;
+    },
+
+    async lastEventDates(types) {
+      await db.ready;
+      if (types.length === 0) return {};
+      const { rows } = await db.client.execute({
+        sql: `SELECT lead_id, MAX(occurred_at) AS last FROM lead_events WHERE type IN (${types.map(() => "?").join(", ")}) GROUP BY lead_id`,
+        args: [...types],
+      });
+      return Object.fromEntries(rows.map((row) => [String(row.lead_id), new Date(String(row.last))]));
+    },
+
+    async recordEvent(event, stageChange) {
       await db.ready;
       // Une seule transaction. L'étape ne change que si le lead est encore à « from ».
       const statements = [insertEvent(event)];

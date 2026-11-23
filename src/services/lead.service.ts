@@ -4,6 +4,8 @@ import { z } from "zod";
 import {
   eventLabel,
   groupByStage,
+  HOT_ACTION_TYPES,
+  isHot,
   sortHistory,
   SUGGESTED_TRADES,
   type BoardColumn,
@@ -121,7 +123,9 @@ export function createLeadService({ repository, clock, ids, settings }: LeadServ
     },
 
     async getBoard(): Promise<BoardColumn[]> {
-      return groupByStage(await repository.findAll());
+      const [leads, lastActions] = await Promise.all([repository.findAll(), repository.lastEventDates(HOT_ACTION_TYPES)]);
+      const now = clock.now();
+      return groupByStage(leads.map((lead) => ({ ...lead, hot: isHot(lastActions[lead.id] ?? null, now) })));
     },
   };
 }

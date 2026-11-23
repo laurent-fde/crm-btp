@@ -58,7 +58,7 @@ export function createSequenceService({ repository, emailSender, settings, clock
       // 2. L'envoi et le changement d'étape sont enregistrés ensemble.
       const nextStage = stageAfterEmail(lead.stage);
       try {
-        await repository.recordEmailSent(
+        await repository.recordEvent(
           {
             id: ids.next(),
             leadId,

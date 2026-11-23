@@ -45,6 +45,21 @@ describe("présentation · KanbanBoard", () => {
     expect(screen.getByRole("link", { name: /Karim Benali/ }).textContent).toContain("69100 Villeurbanne");
   });
 
+  // Critère 4 (lot 4) : badge « Chaud » sur la carte d'un lead qui a agi récemment, sinon rien.
+  it("porte le badge « Chaud » seulement sur un lead chaud", () => {
+    render(
+      <KanbanBoard
+        columns={groupByStage([
+          { ...karim, hot: true },
+          { ...karim, id: "lead-2", name: "Jeanne Morel", hot: false },
+        ])}
+      />,
+    );
+
+    expect(screen.getByRole("link", { name: /Karim Benali/ }).textContent).toContain("Chaud");
+    expect(screen.getByRole("link", { name: /Jeanne Morel/ }).textContent).not.toContain("Chaud");
+  });
+
   // Lot 2 : la carte ouvre la fiche du lead.
   it("fait de chaque carte un lien vers la fiche du lead", () => {
     render(<KanbanBoard columns={groupByStage([karim])} />);
