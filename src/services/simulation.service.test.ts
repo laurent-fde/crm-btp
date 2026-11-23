@@ -20,8 +20,8 @@ const karim: Lead = {
   createdAt: new Date("2026-11-20T08:00:00.000Z"),
 };
 
-function setup() {
-  const fake = createFakeLeadRepository([{ ...karim }]);
+function setup(id = karim.id) {
+  const fake = createFakeLeadRepository([{ ...karim, id }]);
   const webhook = createWebhookService({ repository: fake.repository, ids: createFakeIds("event"), secret });
   const received: { body: string; signature: string | null }[] = [];
   const spy = {
@@ -81,5 +81,14 @@ describe("service · simulation.service · simulateAction", () => {
 
     expect(await service.simulateAction("inconnu", "email_ouvert")).toEqual({ ok: false, message: "Lead inconnu." });
     expect(await service.simulateAction("lead-k", "email_supprime")).toEqual({ ok: false, message: "Action inconnue." });
+    expect(await service.simulateAction("x".repeat(201), "email_ouvert")).toEqual({ ok: false, message: "Lead inconnu." });
+    expect(await service.simulateAction("  ", "email_ouvert")).toEqual({ ok: false, message: "Lead inconnu." });
+  });
+
+  // Revue #12 : la limite est de 200 caractères, inclus.
+  it("accepte un identifiant de lead de 200 caractères", async () => {
+    const { service } = setup("x".repeat(200));
+
+    expect(await service.simulateAction("x".repeat(200), "email_ouvert")).toEqual({ ok: true });
   });
 });

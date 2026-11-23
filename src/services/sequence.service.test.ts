@@ -163,6 +163,15 @@ describe("service · sequence.service · sendNextEmail", () => {
 
     expect(await service.sendNextEmail("inconnu")).toEqual({ ok: false, message: "Ce lead n'existe pas ou plus." });
     expect(await service.sendNextEmail("  ")).toEqual({ ok: false, message: "Ce lead n'existe pas ou plus." });
+    // Contrôle de sécurité : un identifiant démesuré n'atteint pas la base.
+    expect(await service.sendNextEmail("x".repeat(201))).toEqual({ ok: false, message: "Ce lead n'existe pas ou plus." });
+  });
+
+  // Revue #12 : la limite est de 200 caractères, inclus.
+  it("accepte un identifiant de lead de 200 caractères", async () => {
+    const { service } = setup({ ...karim, id: "x".repeat(200) });
+
+    expect((await service.sendNextEmail("x".repeat(200))).ok).toBe(true);
   });
 
   it("n'enregistre rien si le fournisseur est en panne", async () => {

@@ -29,7 +29,8 @@ const RECORD_FAILED = "L'e-mail est parti mais n'a pas pu être enregistré. Rec
 export function createSequenceService({ repository, emailSender, settings, clock, ids }: SequenceServiceDeps) {
   return {
     async sendNextEmail(leadId: string): Promise<SendEmailResult> {
-      if (!leadId.trim()) return { ok: false, message: NOT_FOUND };
+      // Contrôle de sécurité : un identifiant vide ou démesuré n'atteint pas la base.
+      if (!leadId.trim() || leadId.length > 200) return { ok: false, message: NOT_FOUND };
 
       let lead, events, length;
       try {

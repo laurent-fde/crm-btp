@@ -21,7 +21,7 @@ const UNAVAILABLE = "Enregistrement impossible pour le moment.";
 const eventSchema = z.object({
   id: z.string().trim().min(1).max(200),
   type: z.enum(ACTION_TYPES),
-  leadId: z.string().trim().min(1),
+  leadId: z.string().trim().min(1).max(200),
   occurredAt: z.iso.datetime({ offset: true }),
 });
 

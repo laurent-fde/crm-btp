@@ -21,6 +21,8 @@ export function createSimulationService({ webhook, secret, clock, ids }: Simulat
   return {
     async simulateAction(leadId: string, type: string): Promise<SimulateResult> {
       if (!isAction(type)) return { ok: false, message: "Action inconnue." };
+      // Contrôle de sécurité : un identifiant vide ou démesuré n'est pas un lead.
+      if (!leadId.trim() || leadId.length > 200) return { ok: false, message: "Lead inconnu." };
       // Un identifiant neuf à chaque simulation : ce n'est pas un doublon.
       const body = JSON.stringify({ id: ids.next(), type, leadId, occurredAt: clock.now().toISOString() });
       const result = await webhook.receive(body, signWebhook(body, secret));
