@@ -47,6 +47,17 @@ const eslintConfig = defineConfig([
       ] }],
     },
   },
+  // Le proxy (src/proxy.ts) est une porte d'entrée : il ne lit que le verrou d'accès, rien d'autre de la couche données.
+  {
+    files: ["src/proxy.ts"],
+    rules: {
+      "no-restricted-imports": ["error", { patterns: [
+        { group: ["@/data/*", "!@/data/access-gate"], message: "Proxy : n'importe que @/data/access-gate (et next/server)." },
+        { group: ["@/services", "@/services/*", "@/composition", "@/presentation", "@/presentation/*"], message: "Proxy : n'importe que @/data/access-gate (et next/server)." },
+        { group: ["@libsql/*"], message: "Seule la couche données parle à la base." },
+      ] }],
+    },
+  },
   // Override default ignores of eslint-config-next.
   globalIgnores([
     // Default ignores of eslint-config-next:

@@ -19,8 +19,8 @@ const karim: Lead = {
   createdAt: new Date("2026-11-20T08:00:00.000Z"),
 };
 
-function setup(stage: Stage = "email_envoye", events: LeadEvent[] = []) {
-  const fake = createFakeLeadRepository([{ ...karim, stage }], events);
+function setup(stage: Stage = "email_envoye", events: LeadEvent[] = [], id = karim.id) {
+  const fake = createFakeLeadRepository([{ ...karim, id, stage }], events);
   const service = createWebhookService({ repository: fake.repository, ids: createFakeIds("event"), secret });
   return { ...fake, service };
 }
@@ -106,6 +106,7 @@ describe("service · webhook.service · receive", () => {
     ["type inconnu", payload({ type: "email_supprime" }), "Événement mal formé."],
     ["date absente", payload({ occurredAt: undefined }), "Événement mal formé."],
     ["JSON illisible", "{pas du json", "Événement mal formé."],
+    ["identifiant de lead trop long", payload({ leadId: "x".repeat(201) }), "Événement mal formé."],
   ])("refuse un événement mal formé (%s), sans rien modifier", async (_cas, body, message) => {
     const { service, leads, events } = setup();
 
@@ -136,5 +137,13 @@ describe("service · webhook.service · date de l'événement", () => {
     await service.receive(...signed(payload({ occurredAt: "2026-11-22T07:30:00.000Z" })));
 
     expect(fake.events[0].occurredAt).toEqual(new Date("2026-11-22T07:30:00.000Z"));
+  });
+
+  // Revue #12 : la limite est de 200 caractères, inclus.
+  it("accepte un identifiant de lead de 200 caractères", async () => {
+    const { service, leads } = setup("email_envoye", [], "x".repeat(200));
+
+    expect(await service.receive(...signed(payload({ leadId: "x".repeat(200) })))).toEqual({ ok: true, duplicate: false });
+    expect(leads[0].stage).toBe("ouvert");
   });
 });
