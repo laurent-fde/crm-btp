@@ -3,10 +3,11 @@
 
 import { z } from "zod";
 import { ACTION_TYPES, actionTargetStage, advanceStage } from "./domain/lead";
-import type { IdGenerator, LeadRepository } from "./ports";
+import type { Clock, IdGenerator, LeadRepository } from "./ports";
 import { verifyWebhook } from "./webhook-signature";
 
-export type WebhookServiceDeps = { repository: LeadRepository; ids: IdGenerator; secret: string };
+// clock : l'horloge de l'app, qui date la réception (lot 6, passage du temps simulé).
+export type WebhookServiceDeps = { repository: LeadRepository; ids: IdGenerator; secret: string; clock: Clock };
 
 // reason : « signature » (401), « invalid » (400), « unavailable » (503) pour la route HTTP du lot 5.
 export type ReceiveResult =
@@ -33,7 +34,7 @@ function parseJson(body: string): unknown {
   }
 }
 
-export function createWebhookService({ repository, ids, secret }: WebhookServiceDeps) {
+export function createWebhookService({ repository, ids, secret, clock }: WebhookServiceDeps) {
   return {
     async receive(body: string, signature: string | null): Promise<ReceiveResult> {
       if (!verifyWebhook(body, signature, secret)) return { ok: false, reason: "signature", message: SIGNATURE_REFUSED };
@@ -50,7 +51,7 @@ export function createWebhookService({ repository, ids, secret }: WebhookService
         const next = advanceStage(lead.stage, actionTargetStage(type));
         try {
           await repository.recordEvent(
-            { id: ids.next(), leadId, type, occurredAt: new Date(occurredAt), externalId },
+            { id: ids.next(), leadId, type, occurredAt: new Date(occurredAt), receivedAt: clock.now(), externalId },
             next === lead.stage ? null : { from: lead.stage, to: next },
           );
         } catch (error) {

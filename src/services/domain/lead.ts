@@ -50,7 +50,8 @@ export type BoardColumn<T extends Lead = BoardLead> = { stage: Stage; label: str
 export const ACTION_TYPES = ["email_ouvert", "lien_clique", "page_visitee", "rdv_pris"] as const;
 export type ActionType = (typeof ACTION_TYPES)[number];
 
-export const EVENT_TYPES = ["lead_cree", "email_envoye", ...ACTION_TYPES] as const;
+// « lead_perdu » : le lead est passé dans « Perdu » (aucune action après le dernier e-mail, délai écoulé).
+export const EVENT_TYPES = ["lead_cree", "email_envoye", ...ACTION_TYPES, "lead_perdu"] as const;
 export type LeadEventType = (typeof EVENT_TYPES)[number];
 
 // Les actions qui rendent un lead « chaud » (un RDV pris le fait passer dans « Gagné »).
@@ -68,6 +69,8 @@ export type LeadEvent = {
   emailStep?: number;
   emailFinal?: boolean;
   externalId?: string;
+  // Actions reçues : l'heure de réception à l'horloge de l'app (simulée ou non), à côté de la date de l'expéditeur.
+  receivedAt?: Date;
 };
 
 export const ACTION_LABELS: Record<ActionType, string> = {
@@ -108,6 +111,8 @@ export function eventLabel(event: LeadEvent): string {
       return "Lead créé";
     case "email_envoye":
       return `E-mail ${event.emailStep} envoyé`;
+    case "lead_perdu":
+      return "Passé dans Perdu (aucune action après le dernier e-mail)";
     default:
       return ACTION_LABELS[event.type];
   }

@@ -6,6 +6,8 @@ En ligne : https://crm-btp-pi.vercel.app (données fictives).
 
 Étapes d'un lead : Nouveau → E-mail envoyé → Ouvert → Lien cliqué → Page visitée → Gagné (RDV pris), ou Perdu. Un lead n'avance que vers l'avant, et chaque événement reste dans son historique. Seule exception : une action reçue sur un lead Perdu le remet à l'étape de cette action.
 
+Pour la démo, l'horloge de l'app s'avance depuis l'en-tête (+1 jour, +7 jours, retour à aujourd'hui) : un lead qui a reçu toute la séquence sans aucune action passe dans « Perdu » après le délai réglé (7 jours par défaut, dans « Réglages »). La date simulée est conservée après redémarrage.
+
 ## Lancer en local
 
 ```bash

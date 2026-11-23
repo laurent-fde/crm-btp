@@ -28,18 +28,18 @@ function toState(result: SaveLeadResult, input: Required<LeadInput>): LeadFormSt
 
 export async function addLeadAction(_previous: LeadFormState, formData: FormData): Promise<LeadFormState> {
   const input = readInput(formData);
-  return toState(await getLeadService().addLead(input), input);
+  return toState(await (await getLeadService()).addLead(input), input);
 }
 
 export async function updateLeadAction(_previous: LeadFormState, formData: FormData): Promise<LeadFormState> {
   const input = readInput(formData);
   const leadId = String(formData.get("leadId") ?? "");
-  return toState(await getLeadService().updateLead(leadId, input), input);
+  return toState(await (await getLeadService()).updateLead(leadId, input), input);
 }
 
 // Envoie l'e-mail suivant de la séquence ; en cas de succès, la fiche et la carte sont redessinées.
 export async function sendNextEmailAction(_previous: SequenceState, formData: FormData): Promise<SequenceState> {
-  const result = await getSequenceService().sendNextEmail(String(formData.get("leadId") ?? ""));
+  const result = await (await getSequenceService()).sendNextEmail(String(formData.get("leadId") ?? ""));
   if (!result.ok) return { ok: false, message: result.message };
   refresh();
   return { ok: true };
@@ -47,7 +47,7 @@ export async function sendNextEmailAction(_previous: SequenceState, formData: Fo
 
 // Simule une action du destinataire (même chemin qu'un vrai webhook signé) ; en cas de succès, tout est redessiné.
 export async function simulateActionAction(_previous: SequenceState, formData: FormData): Promise<SequenceState> {
-  const result = await getSimulationService().simulateAction(
+  const result = await (await getSimulationService()).simulateAction(
     String(formData.get("leadId") ?? ""),
     String(formData.get("type") ?? ""),
   );

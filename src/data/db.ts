@@ -56,6 +56,8 @@ export const MIGRATIONS: readonly string[] = [
   // Lot 4 : l'identifiant donné par l'expéditeur d'un webhook ; un même événement n'est enregistré qu'une fois.
   `ALTER TABLE lead_events ADD COLUMN external_id TEXT`,
   `CREATE UNIQUE INDEX lead_events_external_id ON lead_events (external_id) WHERE external_id IS NOT NULL`,
+  // Lot 6 (revue #14) : l'heure de réception d'une action, à l'horloge de l'app (simulée ou non).
+  `ALTER TABLE lead_events ADD COLUMN received_at TEXT`,
 ];
 
 async function appliedVersion(client: Client): Promise<number | null> {

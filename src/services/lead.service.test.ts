@@ -402,4 +402,17 @@ describe("service · lead.service · getBoard · lead chaud (lot 4)", () => {
       Paul: false,
     });
   });
+
+  // Lot 6, critère 5 : une action il y a 3 jours, selon l'horloge simulée → plus de badge « Chaud ».
+  it("retire le badge quand l'horloge simulée est avancée de 3 jours après l'action", async () => {
+    const { repository } = createFakeLeadRepository(
+      [karim],
+      [{ id: "a", leadId: "lead-k", type: "lien_clique", occurredAt: new Date("2026-11-23T09:00:00.000Z") }],
+    );
+    const board = (iso: string) =>
+      createLeadService({ repository, clock: createFakeClock(iso), ids: createFakeIds(), settings: createFakeSettingsRepository().repository }).getBoard();
+
+    expect((await board("2026-11-23T10:00:00.000Z")).flatMap((c) => c.leads)[0].hot).toBe(true);
+    expect((await board("2026-11-26T09:00:00.000Z")).flatMap((c) => c.leads)[0].hot).toBe(false);
+  });
 });

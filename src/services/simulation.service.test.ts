@@ -22,7 +22,7 @@ const karim: Lead = {
 
 function setup(id = karim.id) {
   const fake = createFakeLeadRepository([{ ...karim, id }]);
-  const webhook = createWebhookService({ repository: fake.repository, ids: createFakeIds("event"), secret });
+  const webhook = createWebhookService({ repository: fake.repository, ids: createFakeIds("event"), secret, clock: createFakeClock("2026-11-23T09:00:00.000Z") });
   const received: { body: string; signature: string | null }[] = [];
   const spy = {
     receive: (body: string, signature: string | null) => {

@@ -20,11 +20,11 @@ describe("présentation · settings.action", () => {
   });
 
   it("transmet la saisie au service, puis redessine", async () => {
-    updateSettings.mockResolvedValue({ ok: true, settings: { sequenceLength: 5 } });
+    updateSettings.mockResolvedValue({ ok: true, settings: { sequenceLength: 5, lostDelayDays: 3 } });
 
-    const state = await updateSettingsAction(null, form({ sequenceLength: "5" }));
+    const state = await updateSettingsAction(null, form({ sequenceLength: "5", lostDelayDays: "3" }));
 
-    expect(updateSettings).toHaveBeenCalledWith({ sequenceLength: "5" });
+    expect(updateSettings).toHaveBeenCalledWith({ sequenceLength: "5", lostDelayDays: "3" });
     expect(refresh).toHaveBeenCalledOnce();
     expect(state).toEqual({ ok: true });
   });
@@ -32,12 +32,12 @@ describe("présentation · settings.action", () => {
   it("renvoie l'erreur et la saisie, sans redessiner", async () => {
     updateSettings.mockResolvedValue({ ok: false, errors: { sequenceLength: "Entre 1 et 10 e-mails" } });
 
-    const state = await updateSettingsAction(null, form({ sequenceLength: "12" }));
+    const state = await updateSettingsAction(null, form({ sequenceLength: "12", lostDelayDays: "7" }));
 
     expect(state).toEqual({
       ok: false,
       errors: { sequenceLength: "Entre 1 et 10 e-mails" },
-      values: { sequenceLength: "12" },
+      values: { sequenceLength: "12", lostDelayDays: "7" },
     });
     expect(refresh).not.toHaveBeenCalled();
   });

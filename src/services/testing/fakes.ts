@@ -1,6 +1,6 @@
 // Faux ports pour les tests du service : aucune vraie base, une horloge et des identifiants prévisibles.
 
-import type { Clock, EmailMessage, EmailSender, IdGenerator, Lead, LeadEvent, LeadRepository, Settings, SettingsRepository } from "../ports";
+import type { Clock, ClockOffsetRepository, EmailMessage, EmailSender, IdGenerator, Lead, LeadEvent, LeadRepository, Settings, SettingsRepository } from "../ports";
 
 export function createFakeLeadRepository(initial: Lead[] = [], initialEvents: LeadEvent[] = []) {
   const leads = [...initial];
@@ -33,12 +33,45 @@ export function createFakeLeadRepository(initial: Lead[] = [], initialEvents: Le
       const lead = leads.find((l) => l.id === event.leadId);
       if (lead && stageChange && lead.stage === stageChange.from) lead.stage = stageChange.to;
     },
+    recordStageChange: async (event, { from, to }) => {
+      const lead = leads.find((l) => l.id === event.leadId);
+      if (!lead || lead.stage !== from) return false;
+      lead.stage = to;
+      events.push(event);
+      return true;
+    },
   };
   return { repository, leads, events };
 }
 
 export function createFakeClock(iso = "2026-11-23T09:00:00.000Z"): Clock {
   return { now: () => new Date(iso) };
+}
+
+// Horloge qu'on avance à la main (simulation du passage du temps).
+export function createMovableClock(iso = "2026-11-23T09:00:00.000Z") {
+  let current = new Date(iso).getTime();
+  const clock: Clock = { now: () => new Date(current) };
+  return { clock, advanceDays: (days: number) => (current += days * 86_400_000) };
+}
+
+// Faux décalage d'horloge : garde chaque valeur enregistrée.
+export function createFakeClockOffsetRepository(initial = 0) {
+  const values: number[] = [];
+  let current = initial;
+  const repository: ClockOffsetRepository = {
+    load: async () => current,
+    save: async (offsetMs) => {
+      current = offsetMs;
+      values.push(offsetMs);
+    },
+    advanceBy: async (ms) => {
+      current += ms;
+      values.push(current);
+      return current;
+    },
+  };
+  return { repository, values };
 }
 
 export function createFakeIds(prefix = "lead"): IdGenerator {

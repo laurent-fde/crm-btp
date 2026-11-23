@@ -1,7 +1,7 @@
 // @vitest-environment node
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { Lead, Stage } from "@/services/ports";
-import { createFakeIds, createFakeLeadRepository } from "@/services/testing/fakes";
+import { createFakeClock, createFakeIds, createFakeLeadRepository } from "@/services/testing/fakes";
 import { signWebhook } from "@/services/webhook-signature";
 import { createWebhookService } from "@/services/webhook.service";
 
@@ -9,7 +9,8 @@ import { createWebhookService } from "@/services/webhook.service";
 const secret = "secret-de-test";
 let fake: ReturnType<typeof createFakeLeadRepository>;
 vi.mock("@/composition", () => ({
-  getWebhookService: () => createWebhookService({ repository: fake.repository, ids: createFakeIds("event"), secret }),
+  getWebhookService: async () =>
+    createWebhookService({ repository: fake.repository, ids: createFakeIds("event"), secret, clock: createFakeClock() }),
 }));
 const { POST } = await import("./route");
 

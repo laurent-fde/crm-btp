@@ -31,11 +31,12 @@ function toEvent(row: Row): LeadEvent {
     ...(row.email_step != null && { emailStep: Number(row.email_step) }),
     ...(row.email_final != null && { emailFinal: Number(row.email_final) === 1 }),
     ...(row.external_id != null && { externalId: String(row.external_id) }),
+    ...(row.received_at != null && { receivedAt: new Date(String(row.received_at)) }),
   };
 }
 
 const insertEvent = (event: LeadEvent) => ({
-  sql: "INSERT INTO lead_events (id, lead_id, type, occurred_at, email_step, email_final, external_id) VALUES (?, ?, ?, ?, ?, ?, ?)",
+  sql: "INSERT INTO lead_events (id, lead_id, type, occurred_at, email_step, email_final, external_id, received_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
   args: [
     event.id,
     event.leadId,
@@ -44,6 +45,7 @@ const insertEvent = (event: LeadEvent) => ({
     event.emailStep ?? null,
     event.emailFinal === undefined ? null : event.emailFinal ? 1 : 0,
     event.externalId ?? null,
+    event.receivedAt?.toISOString() ?? null,
   ],
 });
 
@@ -105,7 +107,7 @@ export function createLeadRepository(db: Database): LeadRepository {
     async listEvents(leadId) {
       await db.ready;
       const { rows } = await db.client.execute({
-        sql: "SELECT id, lead_id, type, occurred_at, email_step, email_final, external_id FROM lead_events WHERE lead_id = ? ORDER BY occurred_at, rowid",
+        sql: "SELECT id, lead_id, type, occurred_at, email_step, email_final, external_id, received_at FROM lead_events WHERE lead_id = ? ORDER BY occurred_at, rowid",
         args: [leadId],
       });
       return rows.map(toEvent);
@@ -114,7 +116,7 @@ export function createLeadRepository(db: Database): LeadRepository {
     async findEventByExternalId(externalId) {
       await db.ready;
       const { rows } = await db.client.execute({
-        sql: "SELECT id, lead_id, type, occurred_at, email_step, email_final, external_id FROM lead_events WHERE external_id = ?",
+        sql: "SELECT id, lead_id, type, occurred_at, email_step, email_final, external_id, received_at FROM lead_events WHERE external_id = ?",
         args: [externalId],
       });
       return rows[0] ? toEvent(rows[0]) : null;
@@ -141,6 +143,23 @@ export function createLeadRepository(db: Database): LeadRepository {
         });
       }
       await db.client.batch(statements, "write");
+    },
+
+    async recordStageChange(event, stageChange) {
+      await db.ready;
+      // Une seule transaction : l'étape change si le lead est encore à « from », et l'événement n'est écrit
+      // que si cette mise à jour a touché une ligne (changes() = 1).
+      const [update] = await db.client.batch(
+        [
+          { sql: "UPDATE leads SET stage = ? WHERE id = ? AND stage = ?", args: [stageChange.to, event.leadId, stageChange.from] },
+          {
+            sql: "INSERT INTO lead_events (id, lead_id, type, occurred_at, email_step, email_final, external_id, received_at) SELECT ?, ?, ?, ?, ?, ?, ?, ? WHERE changes() = 1",
+            args: insertEvent(event).args,
+          },
+        ],
+        "write",
+      );
+      return update.rowsAffected > 0;
     },
   };
 }

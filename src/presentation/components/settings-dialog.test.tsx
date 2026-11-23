@@ -9,7 +9,7 @@ type SettingsAction = (previous: SettingsState, formData: FormData) => Promise<S
 
 function openDialog(response: SettingsState) {
   const action = vi.fn<SettingsAction>(async () => response);
-  render(<SettingsDialog action={action} settings={{ sequenceLength: 3 }} />);
+  render(<SettingsDialog action={action} settings={{ sequenceLength: 3, lostDelayDays: 7 }} />);
   fireEvent.click(screen.getByRole("button", { name: "Réglages" }));
   return action;
 }
@@ -36,5 +36,30 @@ describe("présentation · SettingsDialog", () => {
     const champ = screen.getByLabelText("Nombre d'e-mails de la séquence") as HTMLInputElement;
     expect(champ.getAttribute("aria-describedby")).toBe(message.id);
     expect(champ.value).toBe("12");
+  });
+
+  // Lot 6, critère 3 : le délai avant « Perdu » se règle ici.
+  it("montre le délai avant « Perdu » et envoie le nouveau", async () => {
+    const action = openDialog({ ok: true });
+
+    const champ = (await screen.findByLabelText("Délai avant « Perdu » (jours)")) as HTMLInputElement;
+    expect(champ.value).toBe("7");
+    fireEvent.change(champ, { target: { value: "3" } });
+    fireEvent.click(screen.getByRole("button", { name: "Enregistrer" }));
+
+    await vi.waitFor(() => expect(action).toHaveBeenCalledOnce());
+    expect(action.mock.calls[0][1].get("lostDelayDays")).toBe("3");
+    expect(action.mock.calls[0][1].get("sequenceLength")).toBe("3");
+  });
+
+  it("relie l'erreur du délai à son champ", async () => {
+    openDialog({ ok: false, errors: { lostDelayDays: "Entre 1 et 90 jours" }, values: { sequenceLength: "3", lostDelayDays: "0" } });
+
+    fireEvent.click(await screen.findByRole("button", { name: "Enregistrer" }));
+
+    const message = await screen.findByText("Entre 1 et 90 jours");
+    const champ = screen.getByLabelText("Délai avant « Perdu » (jours)") as HTMLInputElement;
+    expect(champ.getAttribute("aria-describedby")).toBe(message.id);
+    expect(champ.value).toBe("0");
   });
 });

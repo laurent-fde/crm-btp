@@ -7,7 +7,7 @@ const STATUS = { signature: 401, invalid: 400, unavailable: 503 } as const;
 export async function POST(request: Request) {
   // Le corps brut, tel que reçu : c'est lui qui est signé.
   const body = await request.text();
-  const result = await getWebhookService().receive(body, request.headers.get("x-webhook-signature"));
+  const result = await (await getWebhookService()).receive(body, request.headers.get("x-webhook-signature"));
 
   // Un doublon répond 200 aussi : l'expéditeur sait que l'événement est reçu et arrête de le renvoyer.
   if (result.ok) return Response.json({ ok: true, duplicate: result.duplicate });

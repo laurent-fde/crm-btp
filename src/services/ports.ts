@@ -37,6 +37,9 @@ export interface LeadRepository {
   // ensemble (tout ou rien).
   // L'étape ne change que si le lead est encore à « from » : une avancée faite entre-temps n'est pas écrasée.
   recordEvent(event: LeadEvent, stageChange: { from: Stage; to: Stage } | null): Promise<void>;
+  // Change l'étape si le lead est encore à « from », et n'écrit l'événement que dans ce cas (tout ou rien).
+  // Renvoie true si l'étape a changé.
+  recordStageChange(event: LeadEvent, stageChange: { from: Stage; to: Stage }): Promise<boolean>;
   // L'événement reçu avec cet identifiant d'expéditeur, s'il existe (dédoublonnage des webhooks).
   findEventByExternalId(externalId: string): Promise<LeadEvent | null>;
   // Pour chaque lead, la date de son dernier événement parmi ces types.
@@ -47,4 +50,12 @@ export interface LeadRepository {
 export interface SettingsRepository {
   load(): Promise<Partial<Settings>>;
   save(settings: Settings): Promise<void>;
+}
+
+// Décalage de l'horloge de l'app (en millisecondes), pour simuler le passage du temps. 0 = l'heure réelle.
+export interface ClockOffsetRepository {
+  load(): Promise<number>;
+  save(offsetMs: number): Promise<void>;
+  // Ajoute une avance en une seule opération (deux avances simultanées s'additionnent). Renvoie le nouveau décalage.
+  advanceBy(ms: number): Promise<number>;
 }
