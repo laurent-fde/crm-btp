@@ -23,8 +23,8 @@ const detail: LeadDetailResult = {
     createdAt: new Date("2026-11-23T09:00:00.000Z"),
   },
   history: [
-    { id: "e1", type: "lead_cree", label: "Lead créé", occurredAt: new Date("2026-11-23T09:00:00.000Z") },
-    { id: "e2", type: "email_envoye", label: "E-mail 1 envoyé", occurredAt: new Date("2026-11-23T10:30:00.000Z") },
+    { id: "e1", type: "lead_cree", label: "Lead créé", occurredAt: new Date("2026-11-23T09:00:00.000Z"), future: false },
+    { id: "e2", type: "email_envoye", label: "E-mail 1 envoyé", occurredAt: new Date("2026-11-23T10:30:00.000Z"), future: false },
   ],
   sequence: { sent: 1, total: 3, next: 2, blockedReason: null },
 };
@@ -111,5 +111,15 @@ describe("présentation · LeadSheet (lot 2)", () => {
     const lignes = within(screen.getByRole("list", { name: "Historique" })).getAllByRole("listitem");
     expect(within(lignes[0]).queryByText("Daté dans le futur")).toBeNull();
     expect(within(lignes[1]).getByText("Daté dans le futur")).toBeTruthy();
+  });
+
+  // Revue de 2435430 : même Badge « warning » que l'en-tête.
+  it("marque l'événement futur avec le Badge « warning »", () => {
+    const futur: LeadDetailResult = detail.ok
+      ? { ...detail, history: [detail.history[0], { ...detail.history[1], future: true }] }
+      : detail;
+    render(<LeadSheet result={futur} action={action} sendAction={sendAction} simulateAction={simulateAction} trades={[]} />);
+
+    expect(screen.getByText("Daté dans le futur").getAttribute("data-variant")).toBe("warning");
   });
 });

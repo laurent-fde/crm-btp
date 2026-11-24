@@ -76,7 +76,7 @@ export function LeadSheet({ result, action, sendAction, simulateAction, trades }
                       <span className="flex flex-wrap items-center gap-2">
                         {item.label}
                         {item.future && (
-                          <Badge variant="outline" className="border-transparent bg-warning text-warning-foreground">
+                          <Badge variant="warning">
                             Daté dans le futur
                           </Badge>
                         )}

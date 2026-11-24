@@ -38,7 +38,7 @@ export type AddLeadResult = SaveLeadResult;
 export type UpdateLeadResult = SaveLeadResult;
 
 // future : daté après la date de l'app (#17, après un retour à aujourd'hui).
-export type LeadHistoryItem = { id: string; type: LeadEventType; label: string; occurredAt: Date; future?: boolean };
+export type LeadHistoryItem = { id: string; type: LeadEventType; label: string; occurredAt: Date; future: boolean };
 export type LeadDetail = { lead: Lead; history: LeadHistoryItem[]; sequence: SequenceStatus };
 export type LeadDetailResult = ({ ok: true } & LeadDetail) | { ok: false; message: string };
 
