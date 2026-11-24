@@ -1,12 +1,14 @@
 import { describe, expect, it } from "vitest";
 import { createClockService } from "./clock.service";
-import { createFakeClock, createFakeClockOffsetRepository } from "./testing/fakes";
+import type { LeadEvent } from "./ports";
+import { createFakeClock, createFakeClockOffsetRepository, createFakeLeadRepository } from "./testing/fakes";
 
 const DAY = 86_400_000;
 
-function setup(offsetMs = 0) {
+function setup(offsetMs = 0, events: LeadEvent[] = []) {
   const offsets = createFakeClockOffsetRepository(offsetMs);
-  const service = createClockService({ offsets: offsets.repository, realClock: createFakeClock("2026-11-23T09:00:00.000Z") });
+  const leads = createFakeLeadRepository([], events).repository;
+  const service = createClockService({ offsets: offsets.repository, realClock: createFakeClock("2026-11-23T09:00:00.000Z"), leads });
   return { ...offsets, service };
 }
 
@@ -55,5 +57,38 @@ describe("service · clock.service", () => {
     };
 
     expect(await service.advance("1")).toEqual({ ok: false, message: "Enregistrement impossible pour le moment. Réessaie dans un instant." });
+  });
+
+  // #17, option B : le retour à aujourd'hui reste possible, mais l'app dit combien d'événements sont datés après sa date.
+  describe("événements datés dans le futur", () => {
+    const at = (iso: string, id: string): LeadEvent => ({ id, leadId: "lead-m", type: "email_envoye", emailStep: 1, occurredAt: new Date(iso) });
+    const events = [at("2026-11-23T08:00:00.000Z", "passe"), at("2026-11-27T09:00:00.000Z", "j4"), at("2026-12-04T09:00:00.000Z", "j11")];
+
+    it("compte les événements datés après la date de l'app, une fois revenu à aujourd'hui", async () => {
+      const { service } = setup(11 * DAY, events);
+      expect(await service.futureEvents()).toBe(0);
+
+      await service.reset();
+
+      expect(await service.futureEvents()).toBe(2);
+    });
+
+    it("ne compte que ceux qui dépassent la date simulée", async () => {
+      const { service } = setup(7 * DAY, events);
+
+      expect(await service.futureEvents()).toBe(1);
+    });
+
+    it("renvoie 0 si la base ne répond pas (l'avertissement n'empêche pas d'afficher l'en-tête)", async () => {
+      const { service } = setup(0, events);
+      const leads = createFakeLeadRepository().repository;
+      leads.countEventsAfter = async () => {
+        throw new Error("base injoignable");
+      };
+      const broken = createClockService({ offsets: createFakeClockOffsetRepository().repository, realClock: createFakeClock(), leads });
+
+      expect(await service.futureEvents()).toBe(2);
+      expect(await broken.futureEvents()).toBe(0);
+    });
   });
 });

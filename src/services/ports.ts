@@ -46,6 +46,8 @@ export interface LeadRepository {
   lastEventDates(types: readonly LeadEventType[]): Promise<Record<string, Date>>;
   // Nombre d'e-mails envoyés par lead (absent = aucun).
   emailCounts(): Promise<Record<string, number>>;
+  // Nombre d'événements datés strictement après cette date (#17 : événements restés dans le futur).
+  countEventsAfter(date: Date): Promise<number>;
 }
 
 // Réglages de l'app : seulement ce qui a été enregistré (les valeurs par défaut sont dans le domaine).

@@ -74,7 +74,8 @@ export async function getSimulationService() {
 
 // Le passage du temps : avancer l'horloge de l'app ou revenir à aujourd'hui…
 export async function getClockService() {
-  return createClockService({ offsets: createClockOffsetRepository(getDatabase()), realClock: systemClock });
+  const db = getDatabase();
+  return createClockService({ offsets: createClockOffsetRepository(db), realClock: systemClock, leads: createLeadRepository(db) });
 }
 
 // … et les leads qui passent dans « Perdu » à la date de l'app.

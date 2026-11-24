@@ -141,6 +141,16 @@ export function createLeadRepository(db: Database): LeadRepository {
       return Object.fromEntries(rows.map((row) => [String(row.lead_id), Number(row.n)]));
     },
 
+    async countEventsAfter(date) {
+      await db.ready;
+      // Les dates sont toutes écrites au même format ISO (UTC) : la comparaison de texte suit l'ordre des dates.
+      const { rows } = await db.client.execute({
+        sql: "SELECT COUNT(*) AS n FROM lead_events WHERE occurred_at > ?",
+        args: [date.toISOString()],
+      });
+      return Number(rows[0]?.n ?? 0);
+    },
+
     async recordEvent(event, stageChange) {
       await db.ready;
       // Une seule transaction. L'étape ne change que si le lead est encore à « from ».

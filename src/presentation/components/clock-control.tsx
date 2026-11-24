@@ -1,6 +1,6 @@
 "use client";
 
-import { CalendarClock, Loader2, RotateCcw } from "lucide-react";
+import { CalendarClock, Loader2, RotateCcw, TriangleAlert } from "lucide-react";
 import { useActionState, useState } from "react";
 import type { ClockState } from "@/presentation/actions/clock.action";
 import { Button } from "@/presentation/components/ui/button";
@@ -8,7 +8,8 @@ import { formatDateTime } from "./format-date";
 
 type ClockAction = (previous: ClockState, formData: FormData) => Promise<ClockState>;
 type ClockControlProps = {
-  status: { now: string; offsetDays: number };
+  // futureEvents : événements datés après la date de l'app (#17), par exemple après un retour à aujourd'hui.
+  status: { now: string; offsetDays: number; futureEvents?: number };
   action: ClockAction;
 };
 
@@ -58,6 +59,12 @@ export function ClockControl({ status, action }: ClockControlProps) {
       >
         {spinner("reset") ? <Loader2 aria-hidden className="animate-spin" /> : <RotateCcw aria-hidden />}
       </Button>
+      {(status.futureEvents ?? 0) > 0 && (
+        <p role="status" className="flex items-center gap-1 rounded-full bg-warning px-2 py-0.5 text-xs text-warning-foreground">
+          <TriangleAlert aria-hidden className="size-3.5" />
+          {futureEventsLabel(status.futureEvents ?? 0)}
+        </p>
+      )}
       {state && !state.ok && (
         <p role="alert" className="text-xs text-destructive">
           {state.message}
@@ -66,3 +73,6 @@ export function ClockControl({ status, action }: ClockControlProps) {
     </form>
   );
 }
+
+const futureEventsLabel = (count: number) =>
+  count === 1 ? "1 événement daté après la date de l'app" : `${count} événements datés après la date de l'app`;

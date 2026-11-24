@@ -37,7 +37,8 @@ export type SaveLeadResult =
 export type AddLeadResult = SaveLeadResult;
 export type UpdateLeadResult = SaveLeadResult;
 
-export type LeadHistoryItem = { id: string; type: LeadEventType; label: string; occurredAt: Date };
+// future : daté après la date de l'app (#17, après un retour à aujourd'hui).
+export type LeadHistoryItem = { id: string; type: LeadEventType; label: string; occurredAt: Date; future?: boolean };
 export type LeadDetail = { lead: Lead; history: LeadHistoryItem[]; sequence: SequenceStatus };
 export type LeadDetailResult = ({ ok: true } & LeadDetail) | { ok: false; message: string };
 
@@ -112,11 +113,13 @@ export function createLeadService({ repository, clock, ids, settings }: LeadServ
         const lead = await repository.findById(id);
         if (!lead) return { ok: false, message: NOT_FOUND };
         const events = sortHistory(await repository.listEvents(id));
+        const now = clock.now();
         const history = events.map((event) => ({
           id: event.id,
           type: event.type,
           label: eventLabel(event),
           occurredAt: event.occurredAt,
+          future: event.occurredAt > now,
         }));
         const { sequenceLength } = withDefaults(await settings.load());
         return { ok: true, lead, history, sequence: sequenceStatus(lead.stage, events, sequenceLength) };
