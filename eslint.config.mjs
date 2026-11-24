@@ -65,6 +65,8 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Copies du dépôt pour les agents en parallèle (claude --worktree).
+    ".claude/worktrees/**",
   ]),
 ]);
 
