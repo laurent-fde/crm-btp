@@ -79,16 +79,15 @@ describe("service · clock.service", () => {
       expect(await service.futureEvents()).toBe(1);
     });
 
+    // Revue de 2435430 : un seul service dans ce test, celui dont la base ne répond pas.
     it("renvoie 0 si la base ne répond pas (l'avertissement n'empêche pas d'afficher l'en-tête)", async () => {
-      const { service } = setup(0, events);
-      const leads = createFakeLeadRepository().repository;
+      const leads = createFakeLeadRepository([], events).repository;
       leads.countEventsAfter = async () => {
         throw new Error("base injoignable");
       };
-      const broken = createClockService({ offsets: createFakeClockOffsetRepository().repository, realClock: createFakeClock(), leads });
+      const service = createClockService({ offsets: createFakeClockOffsetRepository().repository, realClock: createFakeClock(), leads });
 
-      expect(await service.futureEvents()).toBe(2);
-      expect(await broken.futureEvents()).toBe(0);
+      expect(await service.futureEvents()).toBe(0);
     });
   });
 });

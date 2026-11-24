@@ -50,10 +50,7 @@ Quand on me demande d'enchaîner plusieurs lots :
 - À la fin, une seule PR pour tous les lots, avec un récap par lot : critères cochés et leurs tests, sortie rouge du lot, puis une sortie verte finale, et les 4 points de contrôle.
 
 ## Nomenclature des commits
-- `feat(lot-N): <titre du lot>` : un lot.
-- `fix(lot-N): <ce qui est corrigé>` : une correction.
-- `chore: <quoi>` : mise en place, outillage.
-- `docs: <quoi>` : documentation.
+Format du skill git-conventional. Un lot : `feat(lot-N): <titre du lot>` ; sa correction : `fix(lot-N): <ce qui est corrigé>`.
 
 ## Règles
 - Ne sors pas du lot. Une idée hors lot : signale-la, ne la code pas.

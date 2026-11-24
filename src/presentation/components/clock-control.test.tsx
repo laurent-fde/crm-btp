@@ -10,7 +10,7 @@ type ClockAction = (previous: ClockState, formData: FormData) => Promise<ClockSt
 function renderControl(offsetDays: number, respond: (formData: FormData) => ClockState = () => ({ ok: true })) {
   const action = vi.fn<ClockAction>(async (_previous, formData) => respond(formData));
   const now = offsetDays === 0 ? "2026-11-23T09:00:00.000Z" : "2026-11-30T09:00:00.000Z";
-  render(<ClockControl status={{ now, offsetDays }} action={action} />);
+  render(<ClockControl status={{ now, offsetDays, futureEvents: 0 }} action={action} />);
   return action;
 }
 
@@ -72,5 +72,12 @@ describe("présentation · ClockControl", () => {
 
     render(<ClockControl status={{ now: "2026-11-23T09:00:00.000Z", offsetDays: 0, futureEvents: 0 }} action={vi.fn()} />);
     expect(screen.queryByRole("status")).toBeNull();
+  });
+
+  // Revue de 2435430 : l'avertissement est un Badge du design system, variante « warning ».
+  it("affiche l'avertissement avec le Badge « warning »", () => {
+    render(<ClockControl status={{ now: "2026-11-23T09:00:00.000Z", offsetDays: 0, futureEvents: 2 }} action={vi.fn()} />);
+
+    expect(screen.getByRole("status").getAttribute("data-variant")).toBe("warning");
   });
 });

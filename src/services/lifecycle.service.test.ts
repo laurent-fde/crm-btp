@@ -1,7 +1,17 @@
 import { describe, expect, it } from "vitest";
+import { createClockService } from "./clock.service";
+import { createLeadService } from "./lead.service";
 import { createLifecycleService } from "./lifecycle.service";
 import type { Lead, LeadEvent, Stage } from "./ports";
-import { createFakeIds, createFakeLeadRepository, createFakeSettingsRepository, createMovableClock } from "./testing/fakes";
+import type { Clock } from "./ports";
+import {
+  createFakeClock,
+  createFakeClockOffsetRepository,
+  createFakeIds,
+  createFakeLeadRepository,
+  createFakeSettingsRepository,
+  createMovableClock,
+} from "./testing/fakes";
 
 const finalAt = "2026-11-23T09:00:00.000Z";
 const karim: Lead = {
@@ -108,5 +118,37 @@ describe("service · lifecycle.service · markLostLeads", () => {
     };
 
     expect(await service.markLostLeads()).toEqual({ ok: false, message: "Vérification des leads perdus impossible pour le moment." });
+  });
+
+  // #17, option B (revue de 2435430) : le scénario de l'issue. Le retour à aujourd'hui ne touche à rien :
+  // le lead reste « Perdu », et son passage dans « Perdu » est signalé comme daté dans le futur.
+  it("garde le lead « Perdu » après +11 jours puis un retour à aujourd'hui, et signale l'événement futur", async () => {
+    const { repository } = createFakeLeadRepository([karim], sequenceOf("lead-k"));
+    const settings = createFakeSettingsRepository().repository;
+    const clockService = createClockService({
+      offsets: createFakeClockOffsetRepository().repository,
+      realClock: createFakeClock(finalAt),
+      leads: repository,
+    });
+    // L'horloge de l'app suit la date rendue par le service horloge.
+    let appNow = new Date(finalAt);
+    const appClock: Clock = { now: () => appNow };
+    const lifecycle = createLifecycleService({ repository, settings, clock: appClock, ids: createFakeIds("perdu") });
+    const leads = createLeadService({ repository, settings, clock: appClock, ids: createFakeIds() });
+    const move = async (result: Awaited<ReturnType<typeof clockService.reset>>) => {
+      if (!result.ok) throw new Error(result.message);
+      appNow = result.status.now;
+      await lifecycle.markLostLeads();
+    };
+
+    await move(await clockService.advance("11"));
+    expect((await repository.findById("lead-k"))?.stage).toBe("perdu");
+
+    await move(await clockService.reset());
+
+    expect((await repository.findById("lead-k"))?.stage).toBe("perdu");
+    expect(await clockService.futureEvents()).toBe(1);
+    const detail = await leads.getLeadDetail("lead-k");
+    expect(detail.ok && detail.history.filter((h) => h.future).map((h) => h.type)).toEqual(["lead_perdu"]);
   });
 });

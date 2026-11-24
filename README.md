@@ -83,4 +83,6 @@ Pour la version en ligne, remplace l'adresse par `https://crm-btp-pi.vercel.app/
 - `src/data/` : adaptateurs (base libsql/Turso, horloge, faux fournisseur d'e-mails).
 - `src/composition.ts` : le câblage entre services et adaptateurs.
 
+Les décisions d'architecture (ADR) sont dans `docs/decisions/`.
+
 Stack : Next.js 16, React 19, TypeScript, Tailwind CSS 4, shadcn, libsql (SQLite en local, Turso en ligne), Vitest. Déployé sur Vercel.
