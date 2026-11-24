@@ -51,7 +51,8 @@ export interface LeadRepository {
 // Réglages de l'app : seulement ce qui a été enregistré (les valeurs par défaut sont dans le domaine).
 export interface SettingsRepository {
   load(): Promise<Partial<Settings>>;
-  save(settings: Settings): Promise<void>;
+  // N'écrit que les champs reçus (#18) : un champ absent garde sa valeur enregistrée.
+  save(changes: Partial<Settings>): Promise<void>;
 }
 
 // Décalage de l'horloge de l'app (en millisecondes), pour simuler le passage du temps. 0 = l'heure réelle.

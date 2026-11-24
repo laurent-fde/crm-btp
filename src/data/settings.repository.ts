@@ -24,15 +24,16 @@ export function createSettingsRepository(db: Database): SettingsRepository {
       return saved;
     },
 
-    async save(settings) {
+    // #18 : une requête (upsert) par champ reçu, sans relire : deux enregistrements simultanés
+    // de champs différents ne s'écrasent pas.
+    async save(changes) {
+      const statements = ENTRIES.filter(([field]) => changes[field] !== undefined).map(([field, key]) => ({
+        sql: "INSERT INTO settings (key, value) VALUES (?, ?) ON CONFLICT (key) DO UPDATE SET value = excluded.value",
+        args: [key, String(changes[field])],
+      }));
+      if (statements.length === 0) return;
       await db.ready;
-      await db.client.batch(
-        ENTRIES.map(([field, key]) => ({
-          sql: "INSERT INTO settings (key, value) VALUES (?, ?) ON CONFLICT (key) DO UPDATE SET value = excluded.value",
-          args: [key, String(settings[field])],
-        })),
-        "write",
-      );
+      await db.client.batch(statements, "write");
     },
   };
 }

@@ -47,9 +47,10 @@ export function createSettingsService({ repository }: { repository: SettingsRepo
         return { ok: false, errors };
       }
       try {
-        const settings: Settings = { ...withDefaults(await repository.load()), ...stripUndefined(parsed.data) };
-        await repository.save(settings);
-        return { ok: true, settings };
+        // #18 : on n'écrit que les champs reçus, puis on relit l'état enregistré (qui inclut
+        // une éventuelle modification simultanée d'un autre champ).
+        await repository.save(stripUndefined(parsed.data));
+        return { ok: true, settings: withDefaults(await repository.load()) };
       } catch {
         return { ok: false, errors: {}, formError: SAVE_FAILED };
       }
