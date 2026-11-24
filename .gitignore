@@ -43,3 +43,6 @@ next-env.d.ts
 
 # base SQLite locale
 /.data/
+
+# mémoire Claude Code propre à ma machine
+CLAUDE.local.md
