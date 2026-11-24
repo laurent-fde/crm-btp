@@ -8,6 +8,8 @@ En ligne : https://crm-btp-pi.vercel.app (données fictives).
 
 Pour la démo, l'horloge de l'app s'avance depuis l'en-tête (+1 jour, +7 jours, retour à aujourd'hui) : un lead qui a reçu toute la séquence sans aucune action passe dans « Perdu » après le délai réglé (7 jours par défaut, dans « Réglages »). La date simulée est conservée après redémarrage.
 
+Revenir à aujourd'hui ne touche pas aux événements créés pendant l'avance : ils gardent leur date simulée, et un lead passé dans « Perdu » y reste. L'en-tête affiche alors combien d'événements sont datés après la date de l'app, et la fiche d'un lead les marque « Daté dans le futur ».
+
 ## Lancer en local
 
 ```bash

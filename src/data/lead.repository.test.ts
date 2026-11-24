@@ -332,4 +332,22 @@ describe("données · lead.repository", () => {
 
     expect((await repository.listEvents("lead-1")).at(-1)).toEqual(action);
   });
+
+  // #17 : compter les événements datés après une date (la date de l'app), pour l'avertissement de l'en-tête.
+  it("compte les événements datés strictement après une date", async () => {
+    const repository = createLeadRepository(open(":memory:"));
+    await repository.insert(karim, created(karim));
+    await repository.recordEvent(
+      { id: "a1", leadId: "lead-1", type: "lien_clique", occurredAt: new Date("2026-11-26T09:00:00.000Z"), externalId: "evt-a1" },
+      null,
+    );
+    await repository.recordEvent(
+      { id: "a2", leadId: "lead-1", type: "page_visitee", occurredAt: new Date("2026-12-04T09:00:00.000Z"), externalId: "evt-a2" },
+      null,
+    );
+
+    expect(await repository.countEventsAfter(new Date("2026-11-26T09:00:00.000Z"))).toBe(1);
+    expect(await repository.countEventsAfter(new Date("2026-11-20T00:00:00.000Z"))).toBe(3);
+    expect(await repository.countEventsAfter(new Date("2026-12-31T00:00:00.000Z"))).toBe(0);
+  });
 });

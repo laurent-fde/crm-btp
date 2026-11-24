@@ -11,6 +11,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/presentation/components/ui/sheet";
+import { Badge } from "@/presentation/components/ui/badge";
 import { formatDateTime } from "./format-date";
 import { ActionPanel } from "./action-panel";
 import { LeadForm } from "./lead-form";
@@ -72,7 +73,14 @@ export function LeadSheet({ result, action, sendAction, simulateAction, trades }
                 <ol aria-label="Historique" className="grid gap-2 border-l border-border pl-4">
                   {detail.history.map((item) => (
                     <li key={item.id} className="grid gap-0.5 text-sm">
-                      <span>{item.label}</span>
+                      <span className="flex flex-wrap items-center gap-2">
+                        {item.label}
+                        {item.future && (
+                          <Badge variant="outline" className="border-transparent bg-warning text-warning-foreground">
+                            Daté dans le futur
+                          </Badge>
+                        )}
+                      </span>
                       <time dateTime={item.occurredAt.toISOString()} className="font-mono text-xs text-muted-foreground">
                         {formatDateTime(item.occurredAt)}
                       </time>

@@ -53,8 +53,9 @@ async function SettingsButton() {
 // La date de l'app (simulée ou non), lue à chaque requête.
 async function Clock() {
   await connection();
-  const { now, offsetDays } = await (await getClockService()).getStatus();
-  return <ClockControl status={{ now: now.toISOString(), offsetDays }} action={changeClockAction} />;
+  const clock = await getClockService();
+  const [{ now, offsetDays }, futureEvents] = await Promise.all([clock.getStatus(), clock.futureEvents()]);
+  return <ClockControl status={{ now: now.toISOString(), offsetDays, futureEvents }} action={changeClockAction} />;
 }
 
 type SearchParams = Promise<{ [key: string]: string | string[] | undefined }>;

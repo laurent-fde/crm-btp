@@ -46,4 +46,34 @@ describe("données · settings.repository", () => {
 
     expect(await createSettingsRepository(open(url)).load()).toEqual({ sequenceLength: 5, lostDelayDays: 3 });
   });
+
+  // #18 : n'écrire que les champs reçus, chacun en une requête, sans relire puis tout réécrire.
+  it("garde les deux modifications quand deux mises à jour de champs différents arrivent en même temps", async () => {
+    const db = open(":memory:");
+    await createSettingsRepository(db).save({ sequenceLength: 3, lostDelayDays: 7 });
+
+    await Promise.all([
+      createSettingsRepository(db).save({ sequenceLength: 5 }),
+      createSettingsRepository(db).save({ lostDelayDays: 2 }),
+    ]);
+
+    expect(await createSettingsRepository(db).load()).toEqual({ sequenceLength: 5, lostDelayDays: 2 });
+  });
+
+  it("laisse un champ absent de la saisie à sa valeur enregistrée", async () => {
+    const db = open(":memory:");
+    await createSettingsRepository(db).save({ sequenceLength: 6, lostDelayDays: 4 });
+
+    await createSettingsRepository(db).save({ lostDelayDays: 9 });
+
+    expect(await createSettingsRepository(db).load()).toEqual({ sequenceLength: 6, lostDelayDays: 9 });
+  });
+
+  it("n'écrit rien quand la saisie est vide", async () => {
+    const db = open(":memory:");
+
+    await createSettingsRepository(db).save({});
+
+    expect(await createSettingsRepository(db).load()).toEqual({});
+  });
 });

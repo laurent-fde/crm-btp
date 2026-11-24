@@ -57,4 +57,20 @@ describe("présentation · ClockControl", () => {
     fireEvent.click(screen.getByRole("button", { name: "+1 jour" }));
     await vi.waitFor(() => expect(screen.queryByRole("alert")).toBeNull());
   });
+
+  // #17, option B : le retour à aujourd'hui reste possible, et l'en-tête prévient des événements datés dans le futur.
+  it("prévient quand des événements sont datés après la date de l'app", () => {
+    render(<ClockControl status={{ now: "2026-11-23T09:00:00.000Z", offsetDays: 0, futureEvents: 3 }} action={vi.fn()} />);
+
+    expect(screen.getByRole("status").textContent).toBe("3 événements datés après la date de l'app");
+  });
+
+  it("accorde l'avertissement au singulier, et ne montre rien sans événement futur", () => {
+    render(<ClockControl status={{ now: "2026-11-23T09:00:00.000Z", offsetDays: 0, futureEvents: 1 }} action={vi.fn()} />);
+    expect(screen.getByRole("status").textContent).toBe("1 événement daté après la date de l'app");
+    cleanup();
+
+    render(<ClockControl status={{ now: "2026-11-23T09:00:00.000Z", offsetDays: 0, futureEvents: 0 }} action={vi.fn()} />);
+    expect(screen.queryByRole("status")).toBeNull();
+  });
 });

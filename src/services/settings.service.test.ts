@@ -23,7 +23,8 @@ describe("service · settings.service", () => {
     const result = await service.updateSettings({ sequenceLength: " 5 " });
 
     expect(result).toEqual({ ok: true, settings: { sequenceLength: 5, lostDelayDays: 7 } });
-    expect(values).toEqual({ sequenceLength: 5, lostDelayDays: 7 });
+    // #18 : seul le champ reçu est écrit, le délai garde sa valeur (ici, celle par défaut).
+    expect(values).toEqual({ sequenceLength: 5 });
     expect(await service.getSettings()).toEqual({ sequenceLength: 5, lostDelayDays: 7 });
   });
 
@@ -66,5 +67,21 @@ describe("service · settings.service", () => {
 
     expect(result).toEqual({ ok: false, errors: { lostDelayDays: "Entre 1 et 90 jours" } });
     expect(values).toEqual({});
+  });
+
+  // #18 : le service ne transmet que les champs reçus, sans relire puis tout réécrire.
+  it("ne transmet au dépôt que les champs reçus", async () => {
+    const { repository } = createFakeSettingsRepository({ sequenceLength: 5, lostDelayDays: 7 });
+    const saved: unknown[] = [];
+    const save = repository.save;
+    repository.save = async (changes) => {
+      saved.push(changes);
+      await save(changes);
+    };
+
+    const result = await createSettingsService({ repository }).updateSettings({ lostDelayDays: "2" });
+
+    expect(saved).toEqual([{ lostDelayDays: 2 }]);
+    expect(result).toEqual({ ok: true, settings: { sequenceLength: 5, lostDelayDays: 2 } });
   });
 });

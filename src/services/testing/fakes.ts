@@ -33,6 +33,7 @@ export function createFakeLeadRepository(initial: Lead[] = [], initialEvents: Le
       for (const event of events) if (event.type === "email_envoye") counts[event.leadId] = (counts[event.leadId] ?? 0) + 1;
       return counts;
     },
+    countEventsAfter: async (date) => events.filter((event) => event.occurredAt > date).length,
     recordEvent: async (event, stageChange) => {
       events.push(event);
       const lead = leads.find((l) => l.id === event.leadId);

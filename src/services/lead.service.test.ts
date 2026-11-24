@@ -447,5 +447,22 @@ describe("service · lead.service · getBoard · statistiques", () => {
       { step: 4, count: 0 },
     ]);
   });
-});
 
+  // #17, option B : dans l'historique, un événement daté après la date de l'app est signalé.
+  it("signale dans l'historique les événements datés après la date de l'app", async () => {
+    const { repository } = createFakeLeadRepository(
+      [karim],
+      [
+        { id: "e1", leadId: "lead-k", type: "lead_cree", occurredAt: new Date("2026-11-20T08:00:00.000Z") },
+        { id: "e2", leadId: "lead-k", type: "email_envoye", emailStep: 1, occurredAt: new Date("2026-12-01T08:00:00.000Z") },
+      ],
+    );
+    const service = createLeadService({ repository, clock: createFakeClock("2026-11-23T09:00:00.000Z"), ids: createFakeIds(), settings: createFakeSettingsRepository().repository });
+
+    const detail = await service.getLeadDetail("lead-k");
+    expect(detail.ok && detail.history.map((h) => [h.id, h.future])).toEqual([
+      ["e1", false],
+      ["e2", true],
+    ]);
+  });
+});

@@ -2,7 +2,7 @@
 // L'horloge simulée = l'heure réelle + un décalage enregistré.
 
 import { z } from "zod";
-import type { Clock, ClockOffsetRepository } from "./ports";
+import type { Clock, ClockOffsetRepository, LeadRepository } from "./ports";
 
 export type ClockStatus = { now: Date; offsetDays: number };
 export type ClockResult = { ok: true; status: ClockStatus } | { ok: false; message: string };
@@ -13,7 +13,13 @@ const SAVE_FAILED = "Enregistrement impossible pour le moment. Réessaie dans un
 
 const daysSchema = z.string().trim().regex(/^\d+$/).transform(Number).pipe(z.number().min(1).max(365));
 
-export function createClockService({ offsets, realClock }: { offsets: ClockOffsetRepository; realClock: Clock }) {
+type ClockDeps = {
+  offsets: ClockOffsetRepository;
+  realClock: Clock;
+  leads: Pick<LeadRepository, "countEventsAfter">;
+};
+
+export function createClockService({ offsets, realClock, leads }: ClockDeps) {
   const status = (offsetMs: number): ClockStatus => ({
     now: new Date(realClock.now().getTime() + offsetMs),
     offsetDays: Math.round(offsetMs / DAY_MS),
@@ -43,8 +49,20 @@ export function createClockService({ offsets, realClock }: { offsets: ClockOffse
       }
     },
 
+    // #17, option B : revenir à aujourd'hui ne touche pas aux événements créés pendant l'avance.
+    // Ils restent datés dans le futur, et l'app le signale avec ce nombre.
     async reset(): Promise<ClockResult> {
       return save(0);
+    },
+
+    // Nombre d'événements datés après la date de l'app. 0 si la base ne répond pas : simple avertissement.
+    async futureEvents(): Promise<number> {
+      try {
+        const { now } = status(await offsets.load());
+        return await leads.countEventsAfter(now);
+      } catch {
+        return 0;
+      }
     },
   };
 }

@@ -100,4 +100,16 @@ describe("présentation · LeadSheet (lot 2)", () => {
     expect(replace).toHaveBeenCalledWith("/", { scroll: false });
     await vi.waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
   });
+
+  // #17, option B : un événement daté après la date de l'app porte la mention « Daté dans le futur ».
+  it("signale les événements datés dans le futur dans l'historique", () => {
+    const futur: LeadDetailResult = detail.ok
+      ? { ...detail, history: [detail.history[0], { ...detail.history[1], future: true }] }
+      : detail;
+    render(<LeadSheet result={futur} action={action} sendAction={sendAction} simulateAction={simulateAction} trades={[]} />);
+
+    const lignes = within(screen.getByRole("list", { name: "Historique" })).getAllByRole("listitem");
+    expect(within(lignes[0]).queryByText("Daté dans le futur")).toBeNull();
+    expect(within(lignes[1]).getByText("Daté dans le futur")).toBeTruthy();
+  });
 });
