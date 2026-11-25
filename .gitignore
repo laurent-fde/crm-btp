@@ -46,3 +46,7 @@ next-env.d.ts
 
 # mémoire Claude Code propre à ma machine
 CLAUDE.local.md
+.claude/settings.local.json
+
+# worktrees Claude Code
+.claude/worktrees/

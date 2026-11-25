@@ -64,6 +64,7 @@ type SearchParams = Promise<{ [key: string]: string | string[] | undefined }>;
 async function OpenLead({ searchParams, trades }: { searchParams: SearchParams; trades: readonly string[] }) {
   const { lead } = await searchParams;
   if (typeof lead !== "string" || !lead) return null;
+  await connection();
   await markLostLeads();
   const result = await (await getLeadService()).getLeadDetail(lead);
   return (
