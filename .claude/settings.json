@@ -25,6 +25,7 @@
       "Read(./.env.development)",
       "Read(./.env.production)",
       "Read(./.env.test)",
+      "Bash(rm -rf *)",
       "Bash(git push origin main*)",
       "Bash(turso db destroy *)"
     ]
