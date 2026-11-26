@@ -3,7 +3,9 @@
 # ou qui exposent des secrets. Double les règles « deny » de settings.json, qui comparent le
 # texte exact de la commande et se contournent (« bash -c … », « cat » au lieu de Read).
 # Sortie 2 : la commande est refusée et l'agent lit la raison.
-cmd=$(jq -r '.tool_input.command // empty')
+entree=$(cat)
+cmd=$(printf '%s' "$entree" | jq -r '.tool_input.command // empty')
+dossier=$(printf '%s' "$entree" | jq -r '.cwd // empty')
 
 refuser() {
   echo "Commande bloquée par le garde-fou du projet : $1" >&2
@@ -20,13 +22,21 @@ if [ -n "$pushes" ]; then
     && refuser "push forcé, utilise --force-with-lease."
 fi
 
+# Commit sur main : main ne reçoit que des PR fusionnées par Laurent.
+# La branche est lue dans le dossier où la commande tourne (champ cwd du hook).
+if printf '%s\n' "$cmd" | tr ';&|' '\n\n\n' | grep -Eq '(^|[[:space:]])git([[:space:]]+-[^[:space:]]+)*[[:space:]]+commit([[:space:]]|$)'; then
+  branche=$(git -C "${dossier:-$PWD}" branch --show-current 2>/dev/null)
+  [ "$branche" = "main" ] && refuser "commit sur main, passe sur dev (git switch dev)."
+fi
+
 # Suppression récursive et forcée, même cachée dans « bash -c » ou avec les options séparées.
 printf '%s' "$cmd" | grep -Eq '(^|[^[:alnum:]_-])rm[[:space:]]+(-[[:alpha:]]*r[[:alpha:]]*f|-[[:alpha:]]*f[[:alpha:]]*r|(-[[:alpha:]]+[[:space:]]+)*-r[[:space:]]+(-[[:alpha:]]+[[:space:]]+)*-f|(-[[:alpha:]]+[[:space:]]+)*-f[[:space:]]+(-[[:alpha:]]+[[:space:]]+)*-r)([[:space:]]|$)' \
   && refuser "suppression récursive forcée (rm -rf)."
 
 # Lecture d'un fichier de secrets par une commande (.env.example reste lisible).
+# .env doit commencer un chemin (après un espace, / , un guillemet ou =) : « process.env » passe.
 sans_exemple=$(printf '%s' "$cmd" | sed 's/\.env\.example//g')
-printf '%s' "$sans_exemple" | grep -Eq '(^|[^[:alnum:]_])(cat|less|more|head|tail|grep|rg|sed|awk|source|bat|strings|cp|base64|xxd|od)([[:space:]].*)?\.env(\.[[:alnum:]]+)?([[:space:]"'"'"']|$)' \
+printf '%s' "$sans_exemple" | grep -Eq '(^|[^[:alnum:]_])(cat|less|more|head|tail|grep|rg|sed|awk|source|bat|strings|cp|base64|xxd|od)[[:space:]](.*[[:space:]/"'"'"'=])?\.env(\.[[:alnum:]]+)?([[:space:]"'"'"']|$)' \
   && refuser "lecture d'un fichier de secrets (.env)."
 
 # Fusion d'une PR : elle appartient à Laurent.
