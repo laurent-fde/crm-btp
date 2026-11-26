@@ -6,7 +6,7 @@ Une démo de mini CRM de suivi de leads froids (artisans du bâtiment), pilotée
 
 ## Avant tout travail
 - Lis INTENT.md avant tout travail.
-- Lis les règles du projet dans .claude/rules/ (une par couche).
+- Lis les règles du projet dans .claude/rules/ : `00-principes.md` toujours, puis une par couche.
 
 ## Commandes
 - `pnpm dev` : lancer l'app en local

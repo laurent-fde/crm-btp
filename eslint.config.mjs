@@ -58,6 +58,39 @@ const eslintConfig = defineConfig([
       ] }],
     },
   },
+  // Zéro God file, zéro spaghetti (.claude/rules/00-principes.md) : des plafonds, pas des objectifs.
+  // Les composants shadcn générés (src/presentation/components/ui) et les tests en sont dispensés.
+  {
+    files: ["src/**/*.{ts,tsx}"],
+    ignores: ["src/presentation/components/ui/**", "src/**/*.test.{ts,tsx}"],
+    rules: {
+      "max-lines": ["error", { max: 250, skipBlankLines: true, skipComments: true }],
+      "max-lines-per-function": ["error", { max: 60, skipBlankLines: true, skipComments: true }],
+      complexity: ["error", 8],
+      "max-depth": ["error", 3],
+      "max-params": ["error", 3],
+    },
+  },
+  // Dette au 2026-11-26 : ces fichiers dépassaient déjà un plafond quand il a été posé. Ils restent en
+  // avertissement jusqu'à leur nettoyage ; on en retire un dès qu'il est conforme, on n'en ajoute jamais.
+  {
+    files: [
+      "src/data/lead.repository.ts",
+      "src/presentation/components/lead-form.tsx",
+      "src/presentation/components/lead-sheet.tsx",
+      "src/presentation/components/sequence-panel.tsx",
+      "src/presentation/components/settings-dialog.tsx",
+      "src/services/domain/lifecycle.ts",
+      "src/services/lead.service.ts",
+      "src/services/sequence.service.ts",
+      "src/services/webhook.service.ts",
+    ],
+    rules: {
+      "max-lines-per-function": ["warn", { max: 60, skipBlankLines: true, skipComments: true }],
+      complexity: ["warn", 8],
+      "max-params": ["warn", 3],
+    },
+  },
   // Override default ignores of eslint-config-next.
   globalIgnores([
     // Default ignores of eslint-config-next:
