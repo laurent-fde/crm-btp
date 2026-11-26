@@ -35,7 +35,7 @@ description: Écrit et vérifie les messages de commit au format Conventional Co
 
 - Le type est l'un de ceux du tableau.
 - La portée est facultative, en minuscules : lettres, chiffres, tirets. Portées du projet :
-  - `lot-N` : un lot de lots.md (`feat(lot-6): …`, `fix(lot-6): …`) ;
+  - `lot-N` : un lot de lots.md (`test(lot-6): critères d'acceptation`, `feat(lot-6): …`, `fix(lot-6): …`) ;
   - `presentation`, `service`, `donnees` : une couche (`src/app` + `src/presentation`, `src/services`, `src/data` + `composition.ts`) ;
   - `harnais` : `.claude/`, `CLAUDE.md`, `AGENTS.md` ;
   - `deps` : les dépendances.

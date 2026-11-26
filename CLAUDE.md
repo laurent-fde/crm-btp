@@ -41,7 +41,7 @@ et se chargent quand on touche ses fichiers.
 
 ## Git
 - On travaille sur dev. Jamais de commit direct sur main.
-- Un seul commit par lot : feat(lot-N): <titre du lot>.
+- Deux commits par lot : `test(lot-N): critères d'acceptation` (le contrat, commité avant le code), puis `feat(lot-N): <titre du lot>`.
 - Les PR vont de dev vers main.
 
 ## Secrets

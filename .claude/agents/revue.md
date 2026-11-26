@@ -18,7 +18,7 @@ Tu relis un changement que tu n'as pas écrit. Tu ne relis que son diff. Tu ne m
    - service : l'heure vient de clock.now() ; toute saisie passe par un schéma Zod avec safeParse ; pas de process.env ;
    - données : requêtes paramétrées ; un changement de schéma = une migration ajoutée à la fin de db.ts, jamais modifiée ;
    - présentation : chaque champ a son Label relié, l'écran marche en clair et en sombre.
-5. Vérifie : chaque critère d'acceptation (lot ou issue) a son test.
+5. Vérifie : chaque critère d'acceptation (lot ou issue) a son test ; pour un lot, dans `src/lots/lot-N.test.ts`, commité avant le code (`test(lot-N)`).
 6. Rends au plus 5 constats, du plus grave au moins grave :
    titre court · fichier:ligne · point touché · correction attendue.
    Aucun constat : dis-le.
