@@ -46,7 +46,10 @@ const BASE = `http://127.0.0.1:${PORT}`;
 const dir = mkdtempSync(path.join(tmpdir(), "crm-btp-smoke-"));
 const DATABASE_URL = `file:${path.join(dir, "smoke.db")}`;
 
-const serveur = spawn("pnpm", ["exec", "next", "start", "-p", String(PORT)], {
+// -H 127.0.0.1 : le serveur de test (secret connu, sans mot de passe) n'écoute que la machine locale.
+// detached : le serveur a son propre groupe de processus, arrêté en entier à la fin (pas de next orphelin).
+const serveur = spawn("pnpm", ["exec", "next", "start", "-H", "127.0.0.1", "-p", String(PORT)], {
+  detached: true,
   env: { ...process.env, DATABASE_URL, DATABASE_AUTH_TOKEN: "", WEBHOOK_SECRET: SECRET, APP_PASSWORD: "" },
   stdio: ["ignore", "pipe", "pipe"],
 });
@@ -112,6 +115,11 @@ async function parcoursWebhook() {
   });
   const recu = await envoyerWebhook(evenement, signer(evenement));
   if (recu.status !== 200) throw new Error(`webhook signé refusé (${recu.status})`);
+  // La preuve en base d'abord (le texte de la page peut exister ailleurs), puis l'affichage.
+  const client = createClient({ url: DATABASE_URL });
+  const { rows } = await client.execute({ sql: "SELECT stage FROM leads WHERE id = ?", args: [LEAD.id] });
+  client.close();
+  if (rows[0]?.stage !== "ouvert") throw new Error(`parcours webhook : étape « ${rows[0]?.stage} » en base, « ouvert » attendu`);
   const fiche = await lirePage(`/?lead=${LEAD.id}`);
   for (const attendu of [LEAD.name, "E-mail ouvert"]) {
     if (!fiche.includes(attendu)) throw new Error(`parcours webhook : « ${attendu} » absent de la fiche`);
@@ -143,7 +151,11 @@ try {
 } catch (erreur) {
   console.error(`Smoke ÉCHEC : ${erreur.message}`);
 } finally {
-  serveur.kill("SIGTERM");
+  try {
+    process.kill(-serveur.pid, "SIGTERM");
+  } catch {
+    // déjà arrêté
+  }
   rmSync(dir, { recursive: true, force: true });
 }
 process.exit(code);

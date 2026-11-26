@@ -2,10 +2,13 @@
 # PreToolUse sur Bash : avant « gh pr create », rejoue toute la vérification du projet.
 # Ordre imposé par Next 16 : le build génère les types de routes dont dépendent les types et les tests.
 # Un échec bloque la création de la PR (sortie 2) et renvoie la fin de la sortie à l'agent.
-cmd=$(jq -r '.tool_input.command // empty')
+# Dans le doute (jq absent, entrée illisible, dossier introuvable), on bloque : sortie 2, pas 1.
+command -v jq >/dev/null 2>&1 || { echo "PR bloquée : jq est introuvable, la vérification ne peut pas tourner." >&2; exit 2; }
+cmd=$(jq -er '.tool_input.command | strings' 2>/dev/null) \
+  || { echo "PR bloquée : entrée du hook illisible." >&2; exit 2; }
 printf '%s' "$cmd" | grep -Eq '(^|[^[:alnum:]_])gh[[:space:]]+pr[[:space:]]+create([[:space:]]|$)' || exit 0
 
-cd "${CLAUDE_PROJECT_DIR:-$PWD}" || exit 1
+cd "${CLAUDE_PROJECT_DIR:-$PWD}" || { echo "PR bloquée : dossier du projet introuvable." >&2; exit 2; }
 
 verifier() {
   local nom="$1"

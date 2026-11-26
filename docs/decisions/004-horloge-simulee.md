@@ -10,7 +10,7 @@
 
 ## Decision
 - Le service ne lit l'heure que par le port `Clock` (`clock.now()`), jamais `new Date()`.
-- L'horloge de l'app = l'heure système + un décalage en jours, enregistré en base (`withOffset` dans
+- L'horloge de l'app = l'heure système + un décalage en millisecondes, enregistré dans la table `settings` (clé `clock_offset_ms`, `withOffset` dans
   `src/data/system-clock.ts`). Le temps continue de s'écouler, la date simulée survit au redémarrage.
 - `composition.ts` relit le décalage à chaque service créé (`appClock()`), verrouillé par
   `src/composition.test.ts` (#19).
