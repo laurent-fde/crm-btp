@@ -5,6 +5,8 @@
       "Bash(pnpm lint)",
       "Bash(pnpm build)",
       "Bash(pnpm typecheck)",
+      "Bash(pnpm verifier)",
+      "Bash(pnpm smoke)",
       "Bash(git log *)",
       "Bash(git show *)",
       "Bash(gh pr view *)",

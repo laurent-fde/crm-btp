@@ -10,7 +10,9 @@ Une démo de mini CRM de suivi de leads froids (artisans du bâtiment), pilotée
 
 ## Commandes
 - `pnpm dev` : lancer l'app en local
-- `pnpm build` : construire l'app
+- `pnpm build` : construire l'app (à lancer avant `pnpm smoke`)
+- `pnpm verifier` : lint, types et tests d'un coup
+- `pnpm smoke` : vrai serveur sur base temporaire : pages, webhook signé reçu puis affiché, refus 401 et 413, zéro erreur serveur
 - `pnpm start` : lancer l'app construite
 - `pnpm lint` : vérifier le code avec ESLint (bloque aussi les imports interdits entre couches)
 - `pnpm test` : lancer les tests (Vitest)
