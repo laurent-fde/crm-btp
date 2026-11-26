@@ -1,0 +1,2 @@
+# Les scripts shell gardent des fins de ligne Unix : avec des fins Windows, bash refuse de les lancer.
+*.sh text eol=lf

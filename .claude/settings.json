@@ -13,20 +13,22 @@
       "Bash(git worktree *)"
     ],
     "ask": [
-      "Bash(gh pr merge *)",
+      "Bash(gh pr create *)",
       "Bash(git push --force-with-lease *)",
-      "Bash(git push --force *)",
       "Bash(turso db shell *)"
     ],
     "deny": [
-      "Read(./.env)",
-      "Read(./.env.local)",
-      "Read(./.env.*.local)",
-      "Read(./.env.development)",
-      "Read(./.env.production)",
-      "Read(./.env.test)",
+      "Read(**/.env)",
+      "Read(**/.env.local)",
+      "Read(**/.env.*.local)",
+      "Read(**/.env.development)",
+      "Read(**/.env.production)",
+      "Read(**/.env.test)",
       "Bash(rm -rf *)",
       "Bash(git push origin main*)",
+      "Bash(git push --force *)",
+      "Bash(git push -f *)",
+      "Bash(gh pr merge *)",
       "Bash(turso db destroy *)"
     ]
   },
@@ -40,7 +42,12 @@
         "hooks": [
           {
             "type": "command",
-            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/refus-push-main.sh"
+            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/garde-fou-bash.sh"
+          },
+          {
+            "type": "command",
+            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/verifier-avant-pr.sh",
+            "timeout": 600
           }
         ]
       }
